@@ -1,7 +1,9 @@
 import com.android.build.gradle.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.JavaVersion
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -16,11 +18,13 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                     minSdk = 26
                 }
                 compileOptions {
-                    sourceCompatibility = org.gradle.api.JavaVersion.VERSION_17
-                    targetCompatibility = org.gradle.api.JavaVersion.VERSION_17
+                    sourceCompatibility = JavaVersion.VERSION_17
+                    targetCompatibility = JavaVersion.VERSION_17
                 }
-                // 불필요한 리소스 제거
-                defaultConfig.consumerProguardFiles("consumer-rules.pro")
+            }
+            // Kotlin JVM 타겟을 Java와 동일하게 17로 고정
+            extensions.configure<KotlinAndroidProjectExtension> {
+                jvmToolchain(17)
             }
         }
     }
