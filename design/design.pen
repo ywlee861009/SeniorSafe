@@ -3592,6 +3592,401 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "LKBGQ",
+      "x": 2040,
+      "y": 0,
+      "name": "App Screens",
+      "width": 900,
+      "height": 1880,
+      "fill": "#F2F4F7",
+      "gap": 40,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "rCCkH",
+          "name": "seniorCol",
+          "layout": "vertical",
+          "gap": 40,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Hu1Xd",
+              "name": "Senior — 홈 화면",
+              "clip": true,
+              "width": 390,
+              "height": 844,
+              "fill": "$neutral-000",
+              "cornerRadius": 32
+            },
+            {
+              "type": "frame",
+              "id": "w8yPxj",
+              "name": "Senior — 연결 코드",
+              "clip": true,
+              "width": 390,
+              "height": 844,
+              "fill": "$neutral-000",
+              "cornerRadius": 32
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "CjCp0",
+          "name": "guardianCol",
+          "layout": "vertical",
+          "gap": 40,
+          "children": [
+            {
+              "type": "frame",
+              "id": "A5kB13",
+              "name": "Guardian — 홈 화면",
+              "clip": true,
+              "width": 390,
+              "height": 844,
+              "fill": "$neutral-050",
+              "cornerRadius": 32,
+              "layout": "vertical",
+              "children": [
+                {
+                  "id": "A8LPG",
+                  "type": "ref",
+                  "ref": "p40OV",
+                  "name": "ghTopBar",
+                  "descendants": {
+                    "p3yVl5": {
+                      "enabled": false
+                    },
+                    "o7qd5": {
+                      "content": "내 어르신"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "z7Swj",
+                  "name": "ghBody",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    20,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EUCut",
+                      "name": "ghSectionLabel",
+                      "fill": "$neutral-400",
+                      "content": "연결된 어르신 2명",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "id": "lxotF",
+                      "type": "ref",
+                      "ref": "vlWi0",
+                      "width": "fill_container",
+                      "name": "ghCard1"
+                    },
+                    {
+                      "id": "Fas4x",
+                      "type": "ref",
+                      "ref": "vlWi0",
+                      "width": "fill_container",
+                      "name": "ghCard2",
+                      "descendants": {
+                        "X5Fa5s": {
+                          "content": "김영희"
+                        },
+                        "D8zeQ": {
+                          "fill": "$neutral-400"
+                        },
+                        "e7HbsN": {
+                          "content": "서비스 꺼짐",
+                          "fill": "$neutral-400"
+                        },
+                        "xdg0j": {
+                          "content": "마지막 낙상: 2026.05.10"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "A3CFGx",
+                      "name": "ghSpacer",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "w6nEN",
+                      "name": "ghAddBtn",
+                      "width": "fill_container",
+                      "height": 48,
+                      "cornerRadius": "$radius-md",
+                      "stroke": {
+                        "align": "center",
+                        "thickness": 1.5,
+                        "fill": "$primary-500"
+                      },
+                      "gap": 6,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "ap6vy",
+                          "name": "ghAddIcon",
+                          "width": 18,
+                          "height": 18,
+                          "iconFontName": "person_add",
+                          "iconFontFamily": "Material Symbols Rounded",
+                          "fill": "$primary-500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "tU1TI",
+                          "name": "ghAddLabel",
+                          "fill": "$primary-500",
+                          "content": "어르신 연결하기",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "oZMC6",
+                  "type": "ref",
+                  "ref": "PoNeM",
+                  "width": "fill_container",
+                  "name": "ghBottomNav"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "K4UHN8",
+              "name": "Guardian — 낙상 이력",
+              "clip": true,
+              "width": 390,
+              "height": 844,
+              "fill": "$neutral-050",
+              "cornerRadius": 32,
+              "layout": "vertical",
+              "children": [
+                {
+                  "id": "jOJ0J",
+                  "type": "ref",
+                  "ref": "p40OV",
+                  "name": "fhTopBar",
+                  "descendants": {
+                    "o7qd5": {
+                      "content": "낙상 이력"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "t3ZlX",
+                  "name": "fhBody",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$neutral-050",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HKiNI",
+                      "name": "fhSeniorBanner",
+                      "width": "fill_container",
+                      "fill": "$neutral-000",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": {
+                          "bottom": 1
+                        },
+                        "fill": "$neutral-200"
+                      },
+                      "gap": 12,
+                      "padding": [
+                        12,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "rr2QA",
+                          "name": "fhBannerAvatar",
+                          "width": 36,
+                          "height": 36,
+                          "fill": "$primary-100",
+                          "cornerRadius": "$radius-full",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "RRjqL",
+                              "name": "fhBannerAvatarIcon",
+                              "width": 20,
+                              "height": 20,
+                              "iconFontName": "elderly",
+                              "iconFontFamily": "Material Symbols Rounded",
+                              "fill": "$primary-500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Cq4Ln",
+                          "name": "fhBannerInfo",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Q5Mq0i",
+                              "name": "fhBannerName",
+                              "fill": "$neutral-900",
+                              "content": "홍길동",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "bIflu",
+                              "name": "fhBannerStatus",
+                              "fill": "$success-500",
+                              "content": "보호 중",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AQaXb",
+                      "name": "fhListArea",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oILaD",
+                          "name": "fhMonthLabel",
+                          "fill": "$neutral-400",
+                          "content": "2026년 5월",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "id": "JHwk8",
+                          "type": "ref",
+                          "ref": "YBbXP",
+                          "width": "fill_container",
+                          "name": "fhItem1"
+                        },
+                        {
+                          "id": "aPsdL",
+                          "type": "ref",
+                          "ref": "YBbXP",
+                          "width": "fill_container",
+                          "name": "fhItem2",
+                          "descendants": {
+                            "IkjYJ": {
+                              "fill": "$neutral-400"
+                            },
+                            "o6iZQ": {
+                              "content": "2026.05.10  오전 9:05"
+                            },
+                            "y3bCj": {
+                              "content": "본인 취소",
+                              "fill": "$neutral-400"
+                            }
+                          }
+                        },
+                        {
+                          "id": "e9pQi9",
+                          "type": "ref",
+                          "ref": "YBbXP",
+                          "width": "fill_container",
+                          "name": "fhItem3",
+                          "descendants": {
+                            "o6iZQ": {
+                              "content": "2026.04.28  오후 11:47"
+                            }
+                          }
+                        },
+                        {
+                          "id": "vPflC",
+                          "type": "ref",
+                          "ref": "YBbXP",
+                          "width": "fill_container",
+                          "name": "fhItem4",
+                          "descendants": {
+                            "IkjYJ": {
+                              "fill": "$neutral-400"
+                            },
+                            "o6iZQ": {
+                              "content": "2026.04.15  오후 2:33"
+                            },
+                            "y3bCj": {
+                              "content": "본인 취소",
+                              "fill": "$neutral-400"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "D18lU",
+                  "type": "ref",
+                  "ref": "PoNeM",
+                  "width": "fill_container",
+                  "name": "fhBottomNav",
+                  "descendants": {
+                    "nVe0t": {
+                      "fill": "$neutral-600"
+                    },
+                    "iWLYE": {
+                      "fill": "$neutral-600"
+                    },
+                    "Ezp4x": {
+                      "fill": "$primary-500"
+                    },
+                    "Ct0GN": {
+                      "fill": "$primary-500"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
