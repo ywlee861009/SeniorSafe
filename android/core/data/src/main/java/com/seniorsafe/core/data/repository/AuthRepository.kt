@@ -26,4 +26,9 @@ class AuthRepository @Inject constructor(
     suspend fun getToken(): String? = tokenDataStore.getAccessToken()
 
     suspend fun getBearerToken(): String = "Bearer ${tokenDataStore.getAccessToken()}"
+
+    suspend fun updateFcmToken(fcmToken: String) {
+        val bearer = getBearerToken()
+        api.updateFcmToken(bearer, com.seniorsafe.core.model.FcmTokenRequest(fcmToken))
+    }
 }

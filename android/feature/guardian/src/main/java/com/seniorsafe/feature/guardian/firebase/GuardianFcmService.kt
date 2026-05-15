@@ -8,8 +8,6 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.seniorsafe.core.data.repository.AuthRepository
-import com.seniorsafe.core.network.ApiService
-import com.seniorsafe.core.model.FcmTokenRequest
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +18,6 @@ import javax.inject.Inject
 class GuardianFcmService : FirebaseMessagingService() {
 
     @Inject lateinit var authRepository: AuthRepository
-    @Inject lateinit var apiService: ApiService
 
     companion object {
         private const val CHANNEL_ID = "fall_alert_channel"
@@ -30,8 +27,7 @@ class GuardianFcmService : FirebaseMessagingService() {
         super.onNewToken(token)
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val bearerToken = authRepository.getBearerToken()
-                apiService.updateFcmToken(bearerToken, FcmTokenRequest(token))
+                authRepository.updateFcmToken(token)
             } catch (_: Exception) {}
         }
     }
