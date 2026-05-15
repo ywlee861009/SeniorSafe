@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import Boolean, CheckConstraint, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -18,6 +21,6 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(50))
     user_type: Mapped[str] = mapped_column(String(20))
-    fcm_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fcm_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -21,6 +21,17 @@ Health check:
 http://localhost:8000/health
 ```
 
+## Tests
+
+```bash
+cd backend
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pytest
+```
+
+현재 테스트는 API 라우터 요청/응답 계약, 인증 보호, 서비스 역할 제한을 검증합니다. 실제 PostgreSQL을 사용하는 DB 통합 테스트는 후속 작업입니다.
+
 ## Required Secrets
 
 Set these in the root `.env` file before deploying:

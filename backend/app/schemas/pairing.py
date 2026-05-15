@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +24,7 @@ class PairingItem(BaseModel):
     senior_id: str
     senior_name: str
     service_active: bool
-    last_fall_at: datetime | None
+    last_fall_at: Optional[datetime]
 
 
 class PairingListResponse(BaseModel):
