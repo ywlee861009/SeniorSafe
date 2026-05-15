@@ -24,22 +24,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SeniorSafeTheme {
-                // startDestination을 suspend 값으로 결정해야 하므로 produceState 사용
-                val startDestination by produceState(initialValue = "") {
-                    value = when (tokenDataStore.getUserType()) {
-                        "senior"   -> Route.SENIOR_HOME
-                        "guardian" -> Route.GUARDIAN_HOME
-                        else       -> Route.LOGIN
-                    }
-                }
-
-                if (startDestination.isNotEmpty()) {
-                    val navController = rememberNavController()
-                    AppNavHost(
-                        navController    = navController,
-                        startDestination = startDestination
-                    )
-                }
+                // MVP: 로그인 스킵, 바로 낙상감지 대시보드로
+                val navController = rememberNavController()
+                AppNavHost(
+                    navController    = navController,
+                    startDestination = Route.MVP_DASHBOARD
+                )
             }
         }
     }
