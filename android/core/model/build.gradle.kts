@@ -3,3 +3,8 @@ plugins {
 }
 
 android { namespace = "com.seniorsafe.core.model" }
+
+dependencies {
+    // @SerializedName 어노테이션 사용
+    implementation(libs.gson)
+}

@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.seniorsafe.android.application)
     alias(libs.plugins.seniorsafe.android.compose)
     alias(libs.plugins.seniorsafe.android.hilt)
-    alias(libs.plugins.google.services)
+    // google-services: Firebase 콘솔에서 google-services.json 발급 후 주석 해제
+    // alias(libs.plugins.google.services)
 }
 
 android {
