@@ -1,4 +1,6 @@
-# SeniorSafe — CLAUDE.md
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 시니어 낙상 감지 앱. Android 앱 1개(어르신/보호자 두 모드) + FastAPI 백엔드.
 
@@ -6,46 +8,66 @@
 
 ---
 
+## 빌드/테스트/실행 명령어
+
+### 백엔드
+
+```bash
+# Docker로 전체 스택 실행 (PostgreSQL + FastAPI + Nginx)
+docker-compose up -d --build
+
+# 백엔드 로그
+docker-compose logs -f backend
+
+# DB 마이그레이션 (컨테이너 시작 시 자동 실행됨)
+docker-compose exec backend alembic upgrade head
+
+# 테스트 (in-memory SQLite 사용, Docker 불필요)
+cd backend && python3 -m pytest
+
+# 단일 테스트 파일 실행
+cd backend && python3 -m pytest tests/test_auth_routes.py
+
+# 테스트 의존성 설치
+pip install -r backend/requirements-dev.txt
+
+# API 문서: http://localhost:8000/docs
+# 헬스체크: GET http://localhost:8000/health
+```
+
+### Android
+
+```bash
+cd android
+
+# 빌드
+./gradlew assembleDebug
+
+# 전체 테스트
+./gradlew test
+
+# 특정 모듈 테스트
+./gradlew :feature:senior:test
+
+# 클린 빌드
+./gradlew clean assembleDebug
+```
+
+**Android SDK**: compileSdk 35, minSdk 26, targetSdk 35, JVM 17, Kotlin 2.0.21, Compose BOM 2024.12.01
+
+---
+
 ## 기술 스택
 
 | 영역 | 기술 |
 |------|------|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.0 (async), Alembic |
+| Backend | Python 3.12, FastAPI 0.115, SQLAlchemy 2.0 (async + asyncpg), Alembic |
 | Database | PostgreSQL 16 |
 | 푸시 알림 | Firebase Cloud Messaging (firebase-admin SDK) |
-| 인증 | JWT (python-jose) + bcrypt |
+| 인증 | JWT HS256 (python-jose) + bcrypt |
 | 컨테이너 | Docker + Docker Compose |
-| 리버스 프록시 | Nginx |
-| Android | Kotlin, Retrofit2, OkHttp, FCM |
-
----
-
-## 디렉토리 구조
-
-```
-SeniorSafe/
-├── CLAUDE.md
-├── docker-compose.yml
-├── docs/
-├── design/
-├── nginx/
-│   └── nginx.conf
-└── backend/
-    ├── Dockerfile
-    ├── requirements.txt
-    ├── .env.example
-    ├── alembic/
-    └── app/
-        ├── main.py
-        ├── core/
-        │   ├── config.py       ← 환경변수 (pydantic-settings)
-        │   ├── database.py     ← DB 세션, 엔진
-        │   └── security.py     ← JWT 생성/검증, 비밀번호 해싱
-        ├── models/             ← SQLAlchemy ORM (테이블 정의)
-        ├── schemas/            ← Pydantic (요청/응답 스키마)
-        ├── routers/            ← HTTP 레이어만 (라우팅, 의존성 주입)
-        └── services/           ← 비즈니스 로직 전담
-```
+| 리버스 프록시 | Nginx 1.27 |
+| Android | Kotlin 2.0.21, Jetpack Compose, Hilt 2.53.1, Retrofit 2.11, OkHttp 4.12, FCM |
 
 ---
 
@@ -62,15 +84,12 @@ SeniorSafe/
 
 ### 파일 네이밍 (백엔드)
 
-- 파일명: `snake_case.py`
-- 클래스: `PascalCase`
-- 함수/변수: `snake_case`
+- 파일명: `snake_case.py`, 클래스: `PascalCase`, 함수/변수: `snake_case`
 - 라우터 파일명 = 기능 단위: `auth.py`, `pairing.py`, `fall.py`, `devices.py`
 
 ### DB 세션 패턴
 
 ```python
-# routers에서 항상 이 방식으로 세션 주입
 async def endpoint(db: AsyncSession = Depends(get_db)):
     ...
 ```
@@ -79,7 +98,6 @@ async def endpoint(db: AsyncSession = Depends(get_db)):
 
 ```python
 raise HTTPException(status_code=400, detail="에러 메시지")
-# 응답: {"detail": "에러 메시지"}
 ```
 
 ### 인증 방식
@@ -91,7 +109,6 @@ raise HTTPException(status_code=400, detail="에러 메시지")
 ### 라우터 prefix 규칙
 
 ```python
-# main.py에 등록
 app.include_router(auth_router,    prefix="/auth")
 app.include_router(pairing_router, prefix="/pairing")
 app.include_router(fall_router,    prefix="/fall")
@@ -103,64 +120,17 @@ app.include_router(devices_router, prefix="/devices")
 ## 데이터 모델 요약
 
 ```
-User
-  id (UUID), email, password_hash, name, phone
-  user_type: "senior" | "guardian"
-  fcm_token, is_active, created_at
-
-Pairing
-  id, senior_id → User, guardian_id → User
-  status: "pending" | "active" | "disconnected"
-  created_at
-
-FallEvent
-  id, senior_id → User
-  detected_at, cancelled (bool), acknowledged_at
-
-PairingCode
-  code (6자리), senior_id → User, expires_at
+User         — id (UUID), email, password_hash, name, phone, user_type ("senior"|"guardian"), fcm_token
+Pairing      — id, senior_id → User, guardian_id → User, status ("pending"|"active"|"disconnected")
+FallEvent    — id, senior_id → User, detected_at, cancelled (bool), acknowledged_at
+PairingCode  — code (6자리), senior_id → User, expires_at
 ```
 
 ---
 
-## 환경변수 (.env)
+## 환경변수
 
-```
-POSTGRES_USER=seniorsafe
-POSTGRES_PASSWORD=
-POSTGRES_DB=seniorsafe_db
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-
-SECRET_KEY=
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-REFRESH_TOKEN_EXPIRE_DAYS=30
-
-FIREBASE_CREDENTIALS_PATH=/app/firebase-credentials.json
-
-PAIRING_CODE_EXPIRE_MINUTES=10
-FALL_CANCEL_WINDOW_SECONDS=30
-```
-
-`.env` 파일은 절대 커밋하지 않는다. `.env.example`만 관리.
-
----
-
-## 로컬 실행
-
-```bash
-# 전체 실행
-docker-compose up -d
-
-# 백엔드 로그 확인
-docker-compose logs -f backend
-
-# DB 마이그레이션
-docker-compose exec backend alembic upgrade head
-
-# API 문서
-http://localhost:8000/docs
-```
+`backend/.env.example` 참조. `.env` 파일은 절대 커밋하지 않는다.
 
 ---
 
@@ -181,7 +151,8 @@ android/
 └── feature/
     ├── login/    ← LoginScreen, RegisterScreen + ViewModel + navigation
     ├── senior/   ← SeniorHomeScreen, FallAlertScreen, PairingCodeScreen + FallDetectionService
-    └── guardian/ ← GuardianHomeScreen, ConnectSeniorScreen, FallHistoryScreen + FCM 서비스
+    ├── guardian/ ← GuardianHomeScreen, ConnectSeniorScreen, FallHistoryScreen + FCM 서비스
+    └── mvp/      ← MVP 테스트/데모 화면
 ```
 
 ### 의존성 방향 (절대 역방향 금지)
@@ -196,7 +167,6 @@ core/* → core/* (model만 의존 가능, 순환 금지)
 
 모듈 `build.gradle.kts`는 플러그인 선언만:
 ```kotlin
-// feature 모듈 예시
 plugins {
     alias(libs.plugins.seniorsafe.android.feature)  // library + compose + hilt 전부 포함
 }
@@ -220,7 +190,7 @@ android { namespace = "com.seniorsafe.feature.xxx" }
 
 ### Navigation (Single Activity)
 
-- `app/navigation/AppNavHost.kt` 가 유일한 NavHost
+- `app/navigation/AppNavHost.kt`가 유일한 NavHost
 - 각 feature는 `NavGraphBuilder.xxxGraph(...)` extension으로 라우트 노출
 - 화면 전환 콜백은 람다로 주입 (feature → app 의존성 역전 방지)
 
@@ -236,9 +206,7 @@ FallDetectionService.onFallDetected()
 
 ### 네이밍 (Android/Kotlin)
 
-- 클래스: `PascalCase`
-- 함수/변수: `camelCase`
-- 상수: `UPPER_SNAKE_CASE`
+- 클래스: `PascalCase`, 함수/변수: `camelCase`, 상수: `UPPER_SNAKE_CASE`
 - Route 상수: `camelCase` + `Route` suffix (예: `seniorHomeRoute`)
 
 ---
