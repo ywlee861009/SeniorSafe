@@ -11,6 +11,10 @@ SeniorSafe is an Android fall-detection app with a FastAPI backend.
 - `ticket/`: completed and remaining work tickets.
 - `nginx/` and `docker-compose.yml`: local deployment stack.
 
+## Planning & Tickets
+
+Use `ticket/` as the source of truth for current work tickets. Check `ticket/README.md` for the active roadmap, `ticket/todo/` for remaining work, and `ticket/done/` for completed or historical tickets.
+
 ## Build, Test, and Development Commands
 
 Backend:
@@ -46,7 +50,7 @@ Android code uses Kotlin conventions: `PascalCase` classes, `camelCase` function
 
 ## Testing Guidelines
 
-Backend tests use `pytest` and FastAPI `TestClient`. DB integration tests run against in-memory SQLite, so no backend server is required. Name tests `test_*.py` and cover authentication, role restrictions, persistence, and Firebase/FCM side effects with mocks.
+Backend tests use `pytest` and FastAPI `TestClient`. DB integration tests run against in-memory SQLite, so no backend server is required. Name tests `test_*.py` and cover device registration, pairing restrictions, persistence, and Firebase/FCM side effects with mocks.
 
 Run:
 

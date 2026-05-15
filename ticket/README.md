@@ -33,16 +33,15 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 ## 추천 우선순위
 
-1. `todo/001-product-contract-no-login-pairing.md`
-2. `todo/002-backend-device-pairing-model.md`
-3. `todo/003-android-onboarding-pairing-flow.md`
-4. `todo/004-fall-event-pairing-notification-flow.md`
-5. `todo/005-firebase-runtime-config.md`
-6. `todo/006-sessionless-device-security.md`
-7. `todo/007-guardian-monitoring-pairing-features.md`
-8. `todo/008-sensor-algorithm-validation.md`
-9. `todo/009-local-dev-and-prod-deployment.md`
-10. `todo/010-ci-quality-gates.md`
+1. `todo/002-backend-device-pairing-model.md`
+2. `todo/003-android-onboarding-pairing-flow.md`
+3. `todo/004-fall-event-pairing-notification-flow.md`
+4. `todo/005-firebase-runtime-config.md`
+5. `todo/006-sessionless-device-security.md`
+6. `todo/007-guardian-monitoring-pairing-features.md`
+7. `todo/008-sensor-algorithm-validation.md`
+8. `todo/009-local-dev-and-prod-deployment.md`
+9. `todo/010-ci-quality-gates.md`
 
 ## 핵심 결정사항
 

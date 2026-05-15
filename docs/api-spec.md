@@ -6,10 +6,10 @@ Base URL:
 http://<server-host>/
 ```
 
-Protected endpoints require:
+MVP는 사용자 로그인 없이 동작한다. 보호가 필요한 엔드포인트는 기기 등록 시 발급받은 device token을 사용한다.
 
 ```http
-Authorization: Bearer <access_token>
+Authorization: Bearer <device_access_token>
 ```
 
 ## Health
@@ -20,115 +20,223 @@ Authorization: Bearer <access_token>
 {"status":"ok"}
 ```
 
-## Auth
+## Devices
 
-`POST /auth/register`
+### Register Device
+
+`POST /devices/register`
+
+요청:
 
 ```json
 {
-  "email": "senior@example.com",
-  "password": "password123",
-  "name": "홍길동",
-  "phone": "010-0000-0000",
-  "user_type": "senior"
+  "install_id": "local-install-uuid",
+  "role": "senior",
+  "display_name": "홍길동",
+  "fcm_token": "firebase-token"
 }
 ```
 
-`POST /auth/login`
+응답:
 
 ```json
 {
-  "email": "senior@example.com",
-  "password": "password123"
+  "device_id": "uuid",
+  "role": "senior",
+  "display_name": "홍길동",
+  "device_access_token": "..."
 }
 ```
 
-Response:
+정책:
+
+- `role`은 `senior` 또는 `guardian`이다.
+- `install_id`는 Android 로컬 저장소에서 생성한다.
+- 앱 삭제/재설치로 `install_id`가 사라지면 새 기기로 등록한다.
+
+### Update FCM Token
+
+`PUT /devices/fcm-token`
+
+인증: device token 필요.
+
+```json
+{"fcm_token":"firebase-token"}
+```
+
+응답:
+
+```json
+{"message":"FCM token updated"}
+```
+
+### Get Current Device
+
+`GET /devices/me`
+
+인증: device token 필요.
 
 ```json
 {
-  "access_token": "...",
-  "user_type": "senior",
-  "name": "홍길동",
-  "user_id": "uuid"
+  "device_id": "uuid",
+  "role": "guardian",
+  "display_name": "보호자",
+  "created_at": "2026-05-16T00:00:00Z",
+  "last_seen_at": "2026-05-16T00:10:00Z"
 }
 ```
 
 ## Pairing
 
-`GET /pairing/code`
+### Create Pairing Code
 
-Senior only.
+`POST /pairing/codes`
 
-```json
-{
-  "code": "A3F9K2",
-  "expires_at": "2026-05-15T12:10:00Z"
-}
-```
+인증: senior device token 필요.
 
-`POST /pairing/connect`
-
-Guardian only.
-
-```json
-{"code":"A3F9K2"}
-```
-
-Response:
+응답:
 
 ```json
 {
-  "senior_id": "uuid",
-  "senior_name": "홍길동"
+  "code": "482913",
+  "expires_at": "2026-05-16T00:10:00Z",
+  "expires_in_seconds": 600
 }
 ```
 
-`GET /pairing/list`
+정책:
 
-Guardian only.
+- 코드는 6자리 숫자다.
+- 코드는 10분 동안 유효하다.
+- 코드는 일회성이다.
+
+### Claim Pairing Code
+
+`POST /pairings`
+
+인증: guardian device token 필요.
+
+요청:
+
+```json
+{"code":"482913"}
+```
+
+응답:
+
+```json
+{
+  "pairing_id": "uuid",
+  "senior_device_id": "uuid",
+  "senior_display_name": "홍길동",
+  "created_at": "2026-05-16T00:05:00Z"
+}
+```
+
+오류:
+
+- 만료된 코드
+- 이미 사용된 코드
+- 존재하지 않는 코드
+- 보호자가 아닌 기기의 요청
+
+### List Pairings
+
+`GET /pairings`
+
+인증: device token 필요.
+
+보호자 응답:
 
 ```json
 {
   "pairings": [
     {
-      "senior_id": "uuid",
-      "senior_name": "홍길동",
-      "service_active": true,
-      "last_fall_at": null
+      "pairing_id": "uuid",
+      "senior_device_id": "uuid",
+      "senior_display_name": "홍길동",
+      "last_seen_at": "2026-05-16T00:05:00Z",
+      "last_fall_at": null,
+      "active": true
     }
   ]
 }
 ```
 
-## Fall
-
-`POST /fall/event`
-
-Senior only.
+어르신 응답:
 
 ```json
-{"detected_at":"2026-05-15T12:00:00Z"}
+{
+  "pairings": [
+    {
+      "pairing_id": "uuid",
+      "guardian_device_id": "uuid",
+      "guardian_display_name": "보호자",
+      "active": true
+    }
+  ]
+}
 ```
 
-Response:
+### Disconnect Pairing
+
+`DELETE /pairings/{pairing_id}`
+
+인증: pairing에 속한 senior 또는 guardian device token 필요.
+
+응답:
+
+```json
+{
+  "pairing_id": "uuid",
+  "active": false
+}
+```
+
+## Fall
+
+### Report Fall Event
+
+`POST /fall/events`
+
+인증: senior device token 필요.
+
+```json
+{"detected_at":"2026-05-16T00:00:00Z"}
+```
+
+응답:
 
 ```json
 {
   "event_id": "uuid",
-  "status": "reported"
+  "status": "reported",
+  "notified_guardian_count": 1
 }
 ```
 
-`POST /fall/cancel`
+정책:
 
-Senior only.
+- MVP 기본 정책은 Android가 30초 카운트다운 종료 후 이벤트를 전송하는 방식이다.
+- 카운트다운 중 어르신이 취소하면 서버에 이벤트를 만들지 않는다.
+- 이벤트 전송 후 FCM 실패가 발생하면 `notify_failed` 상태로 기록한다.
+
+### Record Cancelled Local Detection
+
+`POST /fall/events/cancelled`
+
+인증: senior device token 필요.
+
+카운트다운 중 취소된 오감지를 서버 이력에 남기고 싶을 때 사용한다. 보호자에게 FCM을 보내지 않는다.
 
 ```json
-{"event_id":"uuid"}
+{
+  "detected_at": "2026-05-16T00:00:00Z",
+  "cancelled_at": "2026-05-16T00:00:12Z"
+}
 ```
 
-Response:
+응답:
 
 ```json
 {
@@ -137,32 +245,21 @@ Response:
 }
 ```
 
-`GET /fall/history/{senior_id}`
+### List Fall History
 
-Guardian only.
+`GET /fall/history/{senior_device_id}`
+
+인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
 
 ```json
 {
   "events": [
     {
       "id": "uuid",
-      "detected_at": "2026-05-15T12:00:00Z",
-      "cancelled": false
+      "detected_at": "2026-05-16T00:00:00Z",
+      "status": "reported",
+      "notified_guardian_count": 1
     }
   ]
 }
-```
-
-## Devices
-
-`PUT /devices/token`
-
-```json
-{"fcm_token":"firebase-token"}
-```
-
-Response:
-
-```json
-{"message":"FCM token updated"}
 ```
