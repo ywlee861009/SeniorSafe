@@ -3620,7 +3620,124 @@
               "width": 390,
               "height": 844,
               "fill": "$neutral-000",
-              "cornerRadius": 32
+              "cornerRadius": 32,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "qy927",
+                  "name": "topArea",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "QwlD9",
+                      "name": "statusBar",
+                      "width": "fill_container",
+                      "height": 44
+                    },
+                    {
+                      "type": "text",
+                      "id": "Gdlhm",
+                      "name": "appName",
+                      "fill": "$primary-500",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "SeniorSafe",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hdLzP",
+                  "name": "heroArea",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "fETWO",
+                      "type": "ref",
+                      "ref": "vgcxO",
+                      "name": "statusRef"
+                    },
+                    {
+                      "type": "text",
+                      "id": "q86oqG",
+                      "name": "headingText",
+                      "fill": "$success-500",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "보호 중",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gRW1D",
+                      "name": "subText",
+                      "fill": "$neutral-600",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "낙상 감지 서비스가 실행 중입니다",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 17,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vCela",
+                  "name": "bottomArea",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "padding": [
+                    0,
+                    24,
+                    48,
+                    24
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "WxVM8",
+                      "type": "ref",
+                      "ref": "v9qau",
+                      "width": 342,
+                      "name": "serviceBtn",
+                      "descendants": {
+                        "hjici": {
+                          "content": "서비스 끄기"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "vWBLO",
+                      "name": "linkText",
+                      "fill": "$primary-500",
+                      "content": "연결 코드 발급하기",
+                      "fontFamily": "Inter",
+                      "fontSize": 17,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
             },
             {
               "type": "frame",
@@ -3630,7 +3747,129 @@
               "width": 390,
               "height": 844,
               "fill": "$neutral-000",
-              "cornerRadius": 32
+              "cornerRadius": 32,
+              "layout": "vertical",
+              "children": [
+                {
+                  "id": "qugkn",
+                  "type": "ref",
+                  "ref": "p40OV",
+                  "width": "fill_container",
+                  "name": "topBar",
+                  "descendants": {
+                    "o7qd5": {
+                      "content": "연결 코드"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "F0m1gh",
+                  "name": "body",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "NZCgS",
+                      "name": "topTexts",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": [
+                        0,
+                        0,
+                        16,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u787WC",
+                          "name": "heading2",
+                          "fill": "$neutral-900",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "보호자에게 이 코드를 알려주세요",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fZeD4",
+                          "name": "subDesc",
+                          "fill": "$neutral-600",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "코드는 10분 후 만료됩니다",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QmZUs",
+                      "name": "codeCenter",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "NKTqe",
+                          "type": "ref",
+                          "ref": "YYhYg",
+                          "name": "codeRef"
+                        },
+                        {
+                          "type": "text",
+                          "id": "K200Ih",
+                          "name": "timerText",
+                          "fill": "$neutral-400",
+                          "content": "남은 시간 08:43",
+                          "textAlign": "center",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "clzVw",
+                      "name": "btnArea",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "padding": [
+                        24,
+                        0
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "VOYlz",
+                          "type": "ref",
+                          "ref": "v9qau",
+                          "width": 280,
+                          "name": "newCodeBtn",
+                          "descendants": {
+                            "hjici": {
+                              "content": "코드 새로 발급"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },

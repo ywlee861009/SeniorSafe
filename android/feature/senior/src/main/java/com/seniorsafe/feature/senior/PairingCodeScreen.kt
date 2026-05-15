@@ -1,0 +1,95 @@
+package com.seniorsafe.feature.senior
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.seniorsafe.core.ui.component.SeniorOutlinedButton
+import com.seniorsafe.core.ui.theme.Neutral100
+import com.seniorsafe.core.ui.theme.Neutral600
+import com.seniorsafe.core.ui.theme.Neutral900
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PairingCodeScreen(
+    onBack: () -> Unit,
+    viewModel: PairingCodeViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var timerSec by remember { mutableIntStateOf(600) }
+
+    LaunchedEffect(uiState.code) {
+        timerSec = 600
+        while (timerSec > 0) {
+            kotlinx.coroutines.delay(1000L)
+            timerSec--
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text      = "보호자에게 이 코드를\n알려주세요",
+                fontSize  = 20.sp,
+                color     = Neutral600,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(32.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Neutral100)
+                    .padding(vertical = 24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text       = uiState.code.ifEmpty { "------" },
+                    fontSize   = 40.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Neutral900,
+                    letterSpacing = 4.sp
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+            val min = timerSec / 60
+            val sec = timerSec % 60
+            Text(
+                text     = "유효시간: %02d:%02d".format(min, sec),
+                fontSize = 20.sp,
+                color    = Neutral600
+            )
+            Spacer(Modifier.height(48.dp))
+            SeniorOutlinedButton(text = "새 코드 받기", onClick = { viewModel.loadCode() })
+        }
+    }
+}

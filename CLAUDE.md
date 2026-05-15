@@ -166,60 +166,80 @@ http://localhost:8000/docs
 
 ## Android 아키텍처 규칙
 
-### 패키지 구조
+### 모듈 구조 (멀티모듈)
 
 ```
-com.seniorsafe/
-├── ui/
-│   ├── login/         ← LoginActivity, RegisterActivity
-│   ├── senior/        ← SeniorHomeActivity
-│   └── guardian/      ← GuardianHomeActivity, FallHistoryActivity, ConnectSeniorActivity
-├── service/
-│   ├── FallDetectionService.kt   ← Foreground Service
-│   └── FallDetectionManager.kt  ← 낙상 감지 알고리즘
-├── data/
-│   ├── api/
-│   │   ├── ApiService.kt         ← Retrofit 인터페이스
-│   │   └── ApiClient.kt          ← Retrofit 인스턴스
-│   ├── model/                    ← 데이터 클래스 (API request/response)
-│   └── repository/
-│       ├── AuthRepository.kt
-│       ├── PairingRepository.kt
-│       └── FallRepository.kt
-└── firebase/
-    └── MyFirebaseMessagingService.kt  ← FCM 토큰 갱신, 알림 수신
+android/
+├── build-logic/convention/   ← Convention 플러그인 (보일러플레이트 관리)
+├── app/                      ← SingleActivity, AppNavHost, HiltAndroidApp
+├── core/
+│   ├── model/    ← 데이터 클래스 (API request/response). 의존성 없음
+│   ├── network/  ← ApiService(Retrofit), NetworkModule(Hilt)
+│   ├── datastore/← TokenDataStore (DataStore Preferences)
+│   ├── data/     ← Repository 구현체 (AuthRepository, FallRepository, PairingRepository)
+│   └── ui/       ← Compose 테마, 공통 컴포넌트 (SeniorPrimaryButton 등)
+└── feature/
+    ├── login/    ← LoginScreen, RegisterScreen + ViewModel + navigation
+    ├── senior/   ← SeniorHomeScreen, FallAlertScreen, PairingCodeScreen + FallDetectionService
+    └── guardian/ ← GuardianHomeScreen, ConnectSeniorScreen, FallHistoryScreen + FCM 서비스
 ```
 
-### 네이밍 (Android)
+### 의존성 방향 (절대 역방향 금지)
+
+```
+app → feature/* → core/*
+feature/* → core/*
+core/* → core/* (model만 의존 가능, 순환 금지)
+```
+
+### Convention 플러그인 사용법
+
+모듈 `build.gradle.kts`는 플러그인 선언만:
+```kotlin
+// feature 모듈 예시
+plugins {
+    alias(libs.plugins.seniorsafe.android.feature)  // library + compose + hilt 전부 포함
+}
+android { namespace = "com.seniorsafe.feature.xxx" }
+```
+
+| 플러그인 | 포함 내용 |
+|---------|---------|
+| `seniorsafe.android.application` | AGP application + kotlin |
+| `seniorsafe.android.library` | AGP library + kotlin |
+| `seniorsafe.android.compose` | Compose BOM + Material3 |
+| `seniorsafe.android.feature` | library + compose + hilt + navigation + viewmodel |
+| `seniorsafe.android.hilt` | Hilt + KSP |
+
+### 화면 추가 절차
+
+1. `feature/{name}/src/main/java/.../XxxScreen.kt` — Composable
+2. `feature/{name}/src/main/java/.../XxxViewModel.kt` — @HiltViewModel
+3. `feature/{name}/src/main/java/.../navigation/XxxNavigation.kt` — NavGraphBuilder extension
+4. `app/navigation/AppNavHost.kt` — 라우트 등록
+
+### Navigation (Single Activity)
+
+- `app/navigation/AppNavHost.kt` 가 유일한 NavHost
+- 각 feature는 `NavGraphBuilder.xxxGraph(...)` extension으로 라우트 노출
+- 화면 전환 콜백은 람다로 주입 (feature → app 의존성 역전 방지)
+
+### 낙상 이벤트 흐름
+
+```
+FallDetectionService.onFallDetected()
+  → FallRepository.publishFallDetected()  (SharedFlow)
+  → SeniorHomeViewModel.fallDetectedEvent 수신
+  → LaunchedEffect → onFallDetected() 콜백
+  → AppNavHost → navigate(fallAlertRoute)
+```
+
+### 네이밍 (Android/Kotlin)
 
 - 클래스: `PascalCase`
 - 함수/변수: `camelCase`
-- 리소스 파일: `snake_case` (예: `activity_senior_home.xml`, `item_senior_card.xml`)
 - 상수: `UPPER_SNAKE_CASE`
-
-### 화면 이동 규칙
-
-로그인 성공 후 `user_type`에 따라 분기:
-```kotlin
-if (user.userType == "senior") → SeniorHomeActivity
-if (user.userType == "guardian") → GuardianHomeActivity
-```
-
-이전 화면으로 돌아갈 수 없는 전환: `Intent.FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_CLEAR_TASK`
-
-### 낙상 감지 알고리즘 위치
-
-`FallDetectionManager.kt`에서만 구현. 알고리즘 상세: `docs/fall-detection.md`
-
-### SharedPreferences 키
-
-```kotlin
-object PrefKeys {
-    const val ACCESS_TOKEN = "access_token"
-    const val USER_TYPE    = "user_type"
-    const val USER_NAME    = "user_name"
-}
-```
+- Route 상수: `camelCase` + `Route` suffix (예: `seniorHomeRoute`)
 
 ---
 
