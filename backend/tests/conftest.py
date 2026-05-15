@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.main import app
-from app.models import FallEvent, Pairing, PairingCode, User
+from app.models import Device, FallEvent, Pairing, PairingCode, User
 from app.models.base import Base
 
 
@@ -52,7 +52,7 @@ def db_client() -> Iterator[TestClient]:
     import asyncio
 
     # Ensure all model modules are imported before create_all sees metadata.
-    _ = (FallEvent, Pairing, PairingCode, User)
+    _ = (Device, FallEvent, Pairing, PairingCode, User)
     asyncio.run(create_schema())
     app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_get_db

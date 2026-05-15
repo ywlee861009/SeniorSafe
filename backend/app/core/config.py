@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     secret_key: str = Field(default="change-this-to-a-long-random-secret")
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
+    device_token_expire_days: int = 365
 
     firebase_credentials_path: str = "/app/firebase-credentials.json"
 
