@@ -4,7 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.seniorsafe.core.datastore.TokenDataStore
 import com.seniorsafe.core.ui.theme.SeniorSafeTheme
@@ -26,10 +30,17 @@ class MainActivity : ComponentActivity() {
             SeniorSafeTheme {
                 // MVP: 로그인 스킵, 바로 낙상감지 대시보드로
                 val navController = rememberNavController()
-                AppNavHost(
-                    navController    = navController,
-                    startDestination = Route.MVP_DASHBOARD
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                ) {
+                    AppNavHost(
+                        navController = navController,
+                        startDestination = Route.MVP_DASHBOARD
+                    )
+                }
             }
         }
     }
