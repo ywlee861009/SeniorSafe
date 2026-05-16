@@ -11,7 +11,6 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:diagnostics"))
     implementation(project(":core:activity"))
-    implementation(project(":core:fall-detection"))
 
     implementation(libs.navigation.compose)
     implementation(libs.hilt.navigation.compose)
