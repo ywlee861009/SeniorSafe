@@ -2,6 +2,16 @@
 
 FastAPI + PostgreSQL backend for the SeniorSafe Android app.
 
+Current MVP scope:
+
+- device registration and device-token authentication
+- senior/guardian pairing
+- unlock activity and service event persistence
+- daily inactivity alert batch
+- Firebase Cloud Messaging for guardian notifications
+
+Fall detection APIs are deferred from the current MVP.
+
 ## Local Run
 
 ```bash
@@ -41,6 +51,8 @@ POSTGRES_USER=seniorsafe
 POSTGRES_PASSWORD=replace-with-a-strong-password
 POSTGRES_DB=seniorsafe_db
 SECRET_KEY=replace-with-a-long-random-secret
+INACTIVITY_ALERT_THRESHOLD_DAYS=2
+INACTIVITY_ALERT_REPEAT_HOURS=24
 ```
 
 For Firebase push notifications, mount the Firebase Admin SDK service account file to:

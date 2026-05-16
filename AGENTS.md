@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-SeniorSafe is an Android fall-detection app with a FastAPI backend.
+SeniorSafe is an Android senior safety app with a FastAPI backend. The current MVP defers fall detection and focuses on unlock activity monitoring: if a senior phone has no unlock record for N days, the backend sends a push notification to guardians.
 
 - `backend/`: FastAPI app, SQLAlchemy async models, Alembic migrations, and pytest tests.
 - `android/`: Kotlin multi-module Android app. `app/` owns `MainActivity` and navigation, `core/` contains shared model/network/data/ui modules, and `feature/` contains login, senior, guardian, and MVP screens.
@@ -50,7 +50,7 @@ Android code uses Kotlin conventions: `PascalCase` classes, `camelCase` function
 
 ## Testing Guidelines
 
-Backend tests use `pytest` and FastAPI `TestClient`. DB integration tests run against in-memory SQLite, so no backend server is required. Name tests `test_*.py` and cover device registration, pairing restrictions, persistence, and Firebase/FCM side effects with mocks.
+Backend tests use `pytest` and FastAPI `TestClient`. DB integration tests run against in-memory SQLite, so no backend server is required. Name tests `test_*.py` and cover device registration, pairing restrictions, unlock activity persistence, service event persistence, inactivity alert batches, and Firebase/FCM side effects with mocks.
 
 Run:
 

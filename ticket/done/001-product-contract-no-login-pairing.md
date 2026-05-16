@@ -32,8 +32,12 @@
 - `ticket/README.md`
 - `AGENTS.md`
 
+## 현재 기준 메모
+
+2026-05-16 이후 로그인 없는 기기 페어링 계약은 유지하되, MVP 핵심 알림은 낙상 감지에서 잠금해제 미사용 알림으로 변경됐다.
+
 ## 확인 근거
 
 - `docs/overview.md`에 제품 흐름, 기기 식별 정책, 페어링 정책, MVP 제외 범위를 명시했다.
-- `docs/api-spec.md`를 device token, device, pairing, fall event 기준 API 계약으로 갱신했다.
+- `docs/api-spec.md`를 device token, device, pairing 기준 API 계약으로 갱신했다.
 - `ticket/README.md`의 추천 우선순위에서 이 티켓을 제거했다.

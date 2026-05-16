@@ -34,7 +34,11 @@
   - `DELETE /pairings/{pairing_id}`
 - device token 발급 및 인증 의존성 추가.
 - Alembic migration 추가.
-- 기존 user/auth 기반 API와 테스트는 유지했다.
+- 구현 당시에는 기존 user/auth 기반 API와 테스트를 유지했다.
+
+## 현재 기준 메모
+
+2026-05-16 이후 현재 MVP는 device token 인증 전용이다. 이후 신규 작업은 잠금해제 이벤트, 서비스 실행 내역, 미사용 알림 배치를 Device/Pairing 기준으로 추가한다.
 
 ## 확인 근거
 

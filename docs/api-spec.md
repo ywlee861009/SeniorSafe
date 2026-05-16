@@ -82,7 +82,9 @@ Authorization: Bearer <device_access_token>
   "role": "guardian",
   "display_name": "보호자",
   "created_at": "2026-05-16T00:00:00Z",
-  "last_seen_at": "2026-05-16T00:10:00Z"
+  "last_seen_at": "2026-05-16T00:10:00Z",
+  "last_unlocked_at": null,
+  "inactivity_threshold_days": 2
 }
 ```
 
@@ -156,7 +158,8 @@ Authorization: Bearer <device_access_token>
       "senior_device_id": "uuid",
       "senior_display_name": "홍길동",
       "last_seen_at": "2026-05-16T00:05:00Z",
-      "last_fall_at": null,
+      "last_unlocked_at": "2026-05-16T08:30:00Z",
+      "inactivity_threshold_days": 2,
       "active": true
     }
   ]
@@ -193,16 +196,23 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-## Fall
+## Activity
 
-### Report Fall Event
+### Record Unlock Event
 
-`POST /fall/events`
+`POST /activity/unlocks`
 
 인증: senior device token 필요.
 
+어르신 기기가 휴대폰 잠금해제를 감지했을 때 호출한다. 서버는 이벤트를 저장하고 해당 기기의 `last_unlocked_at`을 갱신한다.
+
+요청:
+
 ```json
-{"detected_at":"2026-05-16T00:00:00Z"}
+{
+  "unlocked_at": "2026-05-16T08:30:00Z",
+  "source": "user_present"
+}
 ```
 
 응답:
@@ -210,56 +220,158 @@ Authorization: Bearer <device_access_token>
 ```json
 {
   "event_id": "uuid",
-  "status": "reported",
-  "notified_guardian_count": 1
+  "last_unlocked_at": "2026-05-16T08:30:00Z"
 }
 ```
 
 정책:
 
-- MVP 기본 정책은 Android가 30초 카운트다운 종료 후 이벤트를 전송하는 방식이다.
-- 카운트다운 중 어르신이 취소하면 서버에 이벤트를 만들지 않는다.
-- 이벤트 전송 후 FCM 실패가 발생하면 `notify_failed` 상태로 기록한다.
+- `source` 기본값은 `user_present`다.
+- 같은 잠금해제 이벤트가 재전송될 수 있으므로 서버는 가까운 시간대 중복 기록 정책을 정해야 한다.
+- 네트워크 실패 후 Android가 재시도할 수 있다.
+- guardian 기기는 이 API를 호출할 수 없다.
 
-### Record Cancelled Local Detection
+### List Unlock Events
 
-`POST /fall/events/cancelled`
+`GET /activity/unlocks/{senior_device_id}`
 
-인증: senior device token 필요.
+인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
 
-카운트다운 중 취소된 오감지를 서버 이력에 남기고 싶을 때 사용한다. 보호자에게 FCM을 보내지 않는다.
+쿼리:
 
-```json
-{
-  "detected_at": "2026-05-16T00:00:00Z",
-  "cancelled_at": "2026-05-16T00:00:12Z"
-}
+```text
+limit=50
 ```
 
 응답:
-
-```json
-{
-  "event_id": "uuid",
-  "status": "cancelled"
-}
-```
-
-### List Fall History
-
-`GET /fall/history/{senior_device_id}`
-
-인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
 
 ```json
 {
   "events": [
     {
       "id": "uuid",
-      "detected_at": "2026-05-16T00:00:00Z",
-      "status": "reported",
-      "notified_guardian_count": 1
+      "unlocked_at": "2026-05-16T08:30:00Z",
+      "received_at": "2026-05-16T08:30:05Z",
+      "source": "user_present"
     }
   ]
 }
 ```
+
+### Record Service Event
+
+`POST /activity/service-events`
+
+인증: device token 필요.
+
+Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도, 오류 등을 서버에 남긴다.
+
+요청:
+
+```json
+{
+  "event_type": "heartbeat",
+  "occurred_at": "2026-05-16T08:31:00Z",
+  "detail": "monitor service heartbeat"
+}
+```
+
+응답:
+
+```json
+{
+  "event_id": "uuid"
+}
+```
+
+정책:
+
+- MVP에서는 모든 서비스 이벤트를 저장하되, heartbeat는 저장량이 커질 수 있으므로 보존 기간 또는 샘플링 정책을 둔다.
+- `event_type` 후보: `started`, `stopped`, `heartbeat`, `boot_completed`, `unlock_upload_failed`, `error`.
+
+### List Service Events
+
+`GET /activity/service-events/{device_id}`
+
+인증: 대상 기기 본인 또는 active pairing 관계의 상대 기기 필요.
+
+응답:
+
+```json
+{
+  "events": [
+    {
+      "id": "uuid",
+      "event_type": "started",
+      "occurred_at": "2026-05-16T08:00:00Z",
+      "received_at": "2026-05-16T08:00:02Z",
+      "detail": "monitor service started"
+    }
+  ]
+}
+```
+
+## Inactivity Alerts
+
+### Run Inactivity Alert Batch
+
+`POST /internal/batches/inactivity-alerts/run`
+
+인증: 운영용 internal token 또는 관리자 실행 환경 필요.
+
+일일 배치에서 호출하거나, 운영자가 수동 실행할 수 있는 내부 API다. MVP 기본 임계값은 2일이다.
+
+요청:
+
+```json
+{
+  "dry_run": false,
+  "now": "2026-05-18T09:00:00Z"
+}
+```
+
+응답:
+
+```json
+{
+  "checked_senior_count": 12,
+  "alert_created_count": 2,
+  "push_sent_count": 2,
+  "push_failed_count": 0
+}
+```
+
+정책:
+
+- active pairing된 보호자에게만 FCM을 발송한다.
+- 같은 미사용 상태에 대해 반복 알림 간격을 제한한다.
+- FCM 실패도 `InactivityAlert` 로그에 남긴다.
+- 실제 운영에서는 HTTP API 대신 CLI/스케줄러로 실행해도 된다.
+
+### List Inactivity Alerts
+
+`GET /activity/inactivity-alerts/{senior_device_id}`
+
+인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
+
+응답:
+
+```json
+{
+  "alerts": [
+    {
+      "id": "uuid",
+      "senior_device_id": "uuid",
+      "guardian_device_id": "uuid",
+      "threshold_days": 2,
+      "last_unlocked_at": "2026-05-16T08:30:00Z",
+      "sent_at": "2026-05-18T09:00:00Z",
+      "status": "sent"
+    }
+  ]
+}
+```
+
+## Deferred: Fall
+
+낙상 감지 API는 현재 MVP 범위에서 보류한다. 기존 낙상 감지 진단 구현은 향후 센서 알고리즘 검증 재개 시 참고한다.

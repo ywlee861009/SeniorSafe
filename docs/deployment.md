@@ -25,13 +25,20 @@ cp backend/.env.example .env
 
 Edit `.env` and set strong values for `POSTGRES_PASSWORD` and `SECRET_KEY`.
 
-If Firebase push notifications are needed, place the key on the server:
+Firebase push notifications are needed for inactivity alerts. Place the key on the server:
 
 ```bash
 cp /path/to/firebase-credentials.json backend/firebase-credentials.json
 ```
 
 Then mount it into the backend service as `/app/firebase-credentials.json`.
+
+Set the inactivity alert defaults in `.env`:
+
+```bash
+INACTIVITY_ALERT_THRESHOLD_DAYS=2
+INACTIVITY_ALERT_REPEAT_HOURS=24
+```
 
 Start the stack:
 
@@ -46,6 +53,18 @@ Check:
 curl http://SERVER_PUBLIC_IP/health
 ```
 
+## Scheduled Jobs
+
+The MVP requires a daily inactivity alert batch. The batch checks senior devices whose `last_unlocked_at` is older than the configured threshold and sends FCM notifications to active guardians.
+
+The implementation may run as one of:
+
+- a backend CLI command executed by cron on the host
+- a lightweight scheduler inside the backend container
+- a protected internal endpoint triggered by an external scheduler
+
+The batch must write `InactivityAlert` rows for sent and failed notifications so repeated alerts and FCM failures are auditable.
+
 ## Ports
 
 - `80`: public HTTP through Nginx
@@ -58,3 +77,4 @@ curl http://SERVER_PUBLIC_IP/health
 - Remove the public `8000:8000` mapping after Android points to the Nginx URL.
 - Add database backups for the `postgres_data` Docker volume.
 - Rotate `SECRET_KEY` and database credentials before deployment.
+- Add a monitored daily schedule for inactivity alerts.
