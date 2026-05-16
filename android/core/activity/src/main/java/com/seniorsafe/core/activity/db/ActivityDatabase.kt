@@ -8,6 +8,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "unlock_events")
@@ -15,6 +17,7 @@ data class UnlockEventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val unlockedAtMillis: Long,
     val unlockedAt: String,
+    val source: String = "user_present",
     val uploaded: Boolean = false
 )
 
@@ -62,10 +65,20 @@ interface ServiceEventDao {
 
 @Database(
     entities = [UnlockEventEntity::class, ServiceEventEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class ActivityDatabase : RoomDatabase() {
     abstract fun unlockEventDao(): UnlockEventDao
     abstract fun serviceEventDao(): ServiceEventDao
+
+    companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE unlock_events ADD COLUMN source TEXT NOT NULL DEFAULT 'user_present'"
+                )
+            }
+        }
+    }
 }

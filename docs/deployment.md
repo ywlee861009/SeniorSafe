@@ -55,7 +55,7 @@ curl http://SERVER_PUBLIC_IP/health
 
 ## Scheduled Jobs
 
-The MVP requires a daily inactivity alert batch. The batch checks senior devices whose `last_unlocked_at` is older than the configured threshold and sends FCM notifications to active guardians.
+The MVP requires a daily inactivity alert batch. The batch checks senior devices whose `last_activity_at` is older than the configured threshold and sends FCM notifications to active guardians.
 
 The implementation may run as one of:
 

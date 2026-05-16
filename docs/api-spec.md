@@ -83,7 +83,7 @@ Authorization: Bearer <device_access_token>
   "display_name": "보호자",
   "created_at": "2026-05-16T00:00:00Z",
   "last_seen_at": "2026-05-16T00:10:00Z",
-  "last_unlocked_at": null,
+  "last_activity_at": null,
   "inactivity_threshold_days": 2
 }
 ```
@@ -158,7 +158,7 @@ Authorization: Bearer <device_access_token>
       "senior_device_id": "uuid",
       "senior_display_name": "홍길동",
       "last_seen_at": "2026-05-16T00:05:00Z",
-      "last_unlocked_at": "2026-05-16T08:30:00Z",
+      "last_activity_at": "2026-05-16T08:30:00Z",
       "inactivity_threshold_days": 2,
       "active": true
     }
@@ -198,19 +198,19 @@ Authorization: Bearer <device_access_token>
 
 ## Activity
 
-### Record Unlock Event
+### Record Activity Event
 
-`POST /activity/unlocks`
+`POST /activity/events`
 
 인증: senior device token 필요.
 
-어르신 기기가 휴대폰 잠금해제를 감지했을 때 호출한다. 서버는 이벤트를 저장하고 해당 기기의 `last_unlocked_at`을 갱신한다.
+어르신 기기에서 활동 신호(잠금해제, 충전기 연결/해제 등)를 감지했을 때 호출한다. 서버는 이벤트를 저장하고 해당 기기의 `last_activity_at`을 갱신한다.
 
 요청:
 
 ```json
 {
-  "unlocked_at": "2026-05-16T08:30:00Z",
+  "occurred_at": "2026-05-16T08:30:00Z",
   "source": "user_present"
 }
 ```
@@ -220,20 +220,21 @@ Authorization: Bearer <device_access_token>
 ```json
 {
   "event_id": "uuid",
-  "last_unlocked_at": "2026-05-16T08:30:00Z"
+  "last_activity_at": "2026-05-16T08:30:00Z"
 }
 ```
 
 정책:
 
+- `source` 값: `user_present`(잠금해제), `power_connected`(충전기 연결), `power_disconnected`(충전기 해제). 향후 `step_detected` 등 추가 가능.
 - `source` 기본값은 `user_present`다.
-- 같은 잠금해제 이벤트가 재전송될 수 있으므로 서버는 가까운 시간대 중복 기록 정책을 정해야 한다.
+- 같은 이벤트가 재전송될 수 있으므로 서버는 가까운 시간대 중복 기록 정책을 정해야 한다.
 - 네트워크 실패 후 Android가 재시도할 수 있다.
 - guardian 기기는 이 API를 호출할 수 없다.
 
-### List Unlock Events
+### List Activity Events
 
-`GET /activity/unlocks/{senior_device_id}`
+`GET /activity/events/{senior_device_id}`
 
 인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
 
@@ -250,7 +251,7 @@ limit=50
   "events": [
     {
       "id": "uuid",
-      "unlocked_at": "2026-05-16T08:30:00Z",
+      "occurred_at": "2026-05-16T08:30:00Z",
       "received_at": "2026-05-16T08:30:05Z",
       "source": "user_present"
     }
@@ -364,7 +365,7 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
       "senior_device_id": "uuid",
       "guardian_device_id": "uuid",
       "threshold_days": 2,
-      "last_unlocked_at": "2026-05-16T08:30:00Z",
+      "last_activity_at": "2026-05-16T08:30:00Z",
       "sent_at": "2026-05-18T09:00:00Z",
       "status": "sent"
     }

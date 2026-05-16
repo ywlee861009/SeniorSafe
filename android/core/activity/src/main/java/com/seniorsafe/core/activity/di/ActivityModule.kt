@@ -25,7 +25,8 @@ object ActivityModule {
             context,
             ActivityDatabase::class.java,
             "seniorsafe_activity.db"
-        ).build()
+        ).addMigrations(ActivityDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideUnlockEventDao(database: ActivityDatabase): UnlockEventDao =

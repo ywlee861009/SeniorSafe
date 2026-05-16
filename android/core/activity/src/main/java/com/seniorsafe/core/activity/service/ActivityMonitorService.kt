@@ -56,6 +56,7 @@ class ActivityMonitorService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var heartbeatJob: Job? = null
     private var unlockReceiver: BroadcastReceiver? = null
+    private var powerReceiver: BroadcastReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -78,6 +79,7 @@ class ActivityMonitorService : Service() {
         log("foreground service started")
 
         registerUnlockReceiver()
+        registerPowerReceiver()
         startHeartbeat()
     }
 
@@ -115,6 +117,7 @@ class ActivityMonitorService : Service() {
         log("onDestroy")
         recordEvent("stopped", "activity monitor service destroyed")
         unregisterUnlockReceiver()
+        unregisterPowerReceiver()
         heartbeatJob?.cancel()
         serviceStateStore.markStopped("onDestroy")
         if (wakeLock.isHeld) {
@@ -151,6 +154,39 @@ class ActivityMonitorService : Service() {
             unregisterReceiver(it)
             unlockReceiver = null
             log("unlock receiver unregistered")
+        }
+    }
+
+    private fun registerPowerReceiver() {
+        powerReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val source = when (intent.action) {
+                    Intent.ACTION_POWER_CONNECTED -> "power_connected"
+                    Intent.ACTION_POWER_DISCONNECTED -> "power_disconnected"
+                    else -> return
+                }
+                val now = System.currentTimeMillis()
+                log("$source received")
+                serviceScope.launch {
+                    activityRepository.recordUnlock(now, source)
+                    val count = activityRepository.unlockCount()
+                    log("activity event recorded: $source (total=$count)")
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_POWER_CONNECTED)
+            addAction(Intent.ACTION_POWER_DISCONNECTED)
+        }
+        registerReceiver(powerReceiver, filter)
+        log("power receiver registered")
+    }
+
+    private fun unregisterPowerReceiver() {
+        powerReceiver?.let {
+            unregisterReceiver(it)
+            powerReceiver = null
+            log("power receiver unregistered")
         }
     }
 

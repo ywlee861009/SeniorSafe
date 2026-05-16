@@ -15,11 +15,15 @@ class ActivityRepository @Inject constructor(
 
     private val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
-    suspend fun recordUnlock(timestampMillis: Long = System.currentTimeMillis()) {
+    suspend fun recordUnlock(
+        timestampMillis: Long = System.currentTimeMillis(),
+        source: String = "user_present"
+    ) {
         unlockDao.insert(
             UnlockEventEntity(
                 unlockedAtMillis = timestampMillis,
-                unlockedAt = formatter.format(Date(timestampMillis))
+                unlockedAt = formatter.format(Date(timestampMillis)),
+                source = source
             )
         )
     }

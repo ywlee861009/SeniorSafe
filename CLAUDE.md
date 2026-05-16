@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SeniorSafe는 Android 앱 1개(어르신/보호자 두 모드)와 FastAPI 백엔드로 구성된 고령자 안부 확인 앱이다.
 
-현재 MVP는 낙상 감지 제품화를 보류하고, 어르신 휴대폰의 잠금해제 활동 기록을 백엔드에 저장한 뒤 마지막 잠금해제 후 2일이 지나면 보호자에게 FCM 푸시를 보내는 방향이다.
+현재 MVP는 낙상 감지 제품화를 보류하고, 어르신 휴대폰의 활동 기록(잠금해제, 충전기 연결/해제 등)을 백엔드에 저장한 뒤 마지막 활동 후 2일이 지나면 보호자에게 FCM 푸시를 보내는 방향이다.
 
 설계 문서: `docs/`, UI 설계: `design/`, API 명세: `docs/api-spec.md`, 티켓: `ticket/`
 
@@ -120,7 +120,7 @@ Device
 ├── token_hash
 ├── created_at
 ├── last_seen_at
-├── last_unlocked_at
+├── last_activity_at
 └── inactivity_threshold_days
 
 PairingCode
@@ -139,12 +139,12 @@ Pairing
 ├── created_at
 └── disconnected_at
 
-UnlockEvent
+ActivityEvent
 ├── id
 ├── senior_device_id
-├── unlocked_at
+├── occurred_at
 ├── received_at
-└── source
+└── source               (user_present | power_connected | power_disconnected)
 
 ServiceEvent
 ├── id
@@ -159,7 +159,7 @@ InactivityAlert
 ├── senior_device_id
 ├── guardian_device_id
 ├── threshold_days
-├── last_unlocked_at
+├── last_activity_at
 ├── sent_at
 ├── status
 └── detail
@@ -206,7 +206,7 @@ core/* → core/* (순환 금지)
 ```text
 ACTION_USER_PRESENT
   → 로컬 UnlockEvent 기록
-  → 백엔드 POST /activity/unlocks 업로드
+  → 백엔드 POST /activity/events 업로드
   → 실패 시 미전송 이벤트로 보관
   → 재시도 후 업로드 성공/실패 로그 기록
 ```
@@ -237,7 +237,7 @@ ActivityMonitorService
 ## 작업 지시 예시
 
 ```text
-"[backend] 잠금해제 이벤트 수신 API 구현해줘"
+"[backend] 활동 이벤트 수신 API 구현해줘"
 "[backend] 미사용 알림 배치 구현해줘"
 "[android] ACTION_USER_PRESENT 기록 구현해줘"
 "[android] 활동 모니터링 서비스 구현해줘"

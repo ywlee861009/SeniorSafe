@@ -4,7 +4,7 @@
 
 고령자의 휴대폰 사용 활동을 보호자가 확인할 수 있게 하는 모바일 안전망 시스템.
 
-현재 MVP는 낙상 감지 기능을 보류하고, 어르신 휴대폰이 일정 기간 잠금해제되지 않으면 보호자에게 푸시 알림을 보내는 흐름에 집중한다. Android 앱은 잠금해제 이벤트와 서비스 실행 내역을 로컬 DB에 기록하고, 백엔드는 마지막 잠금해제 시각과 이벤트 로그를 저장한다.
+현재 MVP는 낙상 감지 기능을 보류하고, 어르신 휴대폰에서 일정 기간 활동이 감지되지 않으면 보호자에게 푸시 알림을 보내는 흐름에 집중한다. Android 앱은 잠금해제, 충전기 연결/해제 등 활동 이벤트와 서비스 실행 내역을 로컬 DB에 기록하고, 백엔드는 마지막 활동 시각과 이벤트 로그를 저장한다.
 
 SeniorSafe MVP는 계정 로그인 없이 동작한다. 앱을 설치한 뒤 보호자 또는 어르신 모드를 선택하고, 어르신 앱에 표시되는 연결 코드를 보호자 앱에 입력해 바로 페어링한다.
 
@@ -20,7 +20,7 @@ SeniorSafe MVP는 계정 로그인 없이 동작한다. 앱을 설치한 뒤 보
 → 어르신: 연결 코드 생성
 → 보호자: 연결 코드 입력
 → 페어링 완료
-→ 어르신 폰 잠금해제 활동 기록
+→ 어르신 폰 활동 기록 (잠금해제, 충전 등)
 → N일 미사용 시 보호자 알림
 ```
 
@@ -55,9 +55,9 @@ SeniorSafe MVP는 계정 로그인 없이 동작한다. 앱을 설치한 뒤 보
 
 ### 미사용 알림 정책
 
-- 어르신 앱은 휴대폰 잠금해제 이벤트를 감지하면 로컬 DB에 기록하고 백엔드에 업로드한다.
-- 백엔드는 어르신 기기의 `last_unlocked_at`을 갱신하고, 모든 잠금해제 이벤트를 별도 로그로 저장한다.
-- 백엔드는 매일 배치를 실행해 `last_unlocked_at` 기준 N일 이상 미사용 상태를 찾는다.
+- 어르신 앱은 활동 이벤트(잠금해제, 충전기 연결/해제 등)를 감지하면 로컬 DB에 기록하고 백엔드에 업로드한다.
+- 백엔드는 어르신 기기의 `last_activity_at`을 갱신하고, 모든 활동 이벤트를 별도 로그로 저장한다.
+- 백엔드는 매일 배치를 실행해 `last_activity_at` 기준 N일 이상 미사용 상태를 찾는다.
 - MVP 기본 임계값은 2일이다.
 - 조건을 만족하면 active pairing된 보호자 기기 FCM token으로 푸시를 보낸다.
 - 같은 미사용 상태에 대해 중복 알림을 과도하게 보내지 않도록 `last_inactivity_alert_sent_at` 또는 알림 로그를 저장한다.
@@ -72,10 +72,10 @@ Android App
 ├── 어르신 모드
 │   ├── 기기 등록
 │   ├── 연결 코드 생성
-│   ├── 잠금해제 감지 Receiver
+│   ├── 활동 감지 Receiver (잠금해제, 충전 상태 변화)
 │   ├── 활동 모니터링 Foreground Service
 │   ├── 서비스 실행 내역 로컬 DB 기록
-│   └── 잠금해제 내역 로컬 DB 기록 및 백엔드 업로드
+│   └── 활동 이벤트 로컬 DB 기록 및 백엔드 업로드
 │
 └── 보호자 모드
     ├── 기기 등록
@@ -88,8 +88,8 @@ Nginx
     ├── Device 등록/인증
     ├── PairingCode 생성/사용
     ├── Pairing 관리
-    ├── UnlockEvent 저장
-    ├── 마지막 잠금해제 시각 관리
+    ├── ActivityEvent 저장
+    ├── 마지막 활동 시각 관리
     ├── 미사용 배치 실행
     └── Firebase FCM 발송
 
@@ -104,9 +104,9 @@ Firebase FCM
 | 영역 | 기술 | 선택 이유 |
 |------|------|----------|
 | Android | Kotlin | 구글 공식 언어, 최신 API 지원 |
-| 잠금해제 감지 | `ACTION_USER_PRESENT` BroadcastReceiver | 사용자가 잠금해제한 시점을 앱에서 기록 가능 |
+| 활동 감지 | BroadcastReceiver (`ACTION_USER_PRESENT`, `ACTION_POWER_CONNECTED/DISCONNECTED`) | 잠금해제, 충전기 연결/해제 등 생존 신호를 앱에서 기록 |
 | Android 서비스 | Foreground Service | 서비스 실행 상태와 생존 여부를 사용자와 개발자가 확인 가능 |
-| Android 진단 로그 | Room | 서비스 실행 내역과 잠금해제 내역을 앱 재시작 이후에도 확인 |
+| Android 진단 로그 | Room | 서비스 실행 내역과 활동 이벤트를 앱 재시작 이후에도 확인 |
 | 백엔드 | Python FastAPI | 비동기 처리, 자동 API 문서화 |
 | 데이터베이스 | PostgreSQL | 기기, 페어링, 활동 이벤트, 알림 로그 관계 표현에 적합 |
 | 기기 인증 | 서버 발급 device access token | 사용자 로그인 없이 API 요청 주체 식별 |
@@ -122,7 +122,7 @@ Firebase FCM
 
 2026-05-16 기준 Android 앱은 아직 최종 온보딩 플로우가 아니라 MVP 낙상 감지 대시보드로 바로 진입한다. 이 대시보드는 센서와 foreground service 검증을 위한 임시 화면이다.
 
-새 MVP 방향에서는 기존 낙상 감지 런타임을 제품 핵심에서 내리고, 서비스 실행 진단 구조와 Room 기반 로그 저장 구조를 잠금해제 활동 모니터링에 재사용한다.
+새 MVP 방향에서는 기존 낙상 감지 런타임을 제품 핵심에서 내리고, 서비스 실행 진단 구조와 Room 기반 로그 저장 구조를 활동 모니터링에 재사용한다.
 
 - 낙상 감지 런타임은 `core:fall-detection` 모듈에 있으나 MVP 제품화는 보류한다.
 - MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB에 저장한다.
@@ -130,7 +130,7 @@ Firebase FCM
 - 서비스 실행 상태 표시는 저장된 boolean이 아니라 service heartbeat 기준으로 동기화한다.
 - root Compose에는 edge-to-edge status bar/navigation bar padding이 적용되어 있다.
 - 로그인 없는 역할 선택/기기 등록/페어링 온보딩은 아직 남은 작업이다.
-- 잠금해제 이벤트 감지, 업로드, 미사용 알림 배치는 신규 작업이다.
+- 활동 이벤트 감지, 업로드, 미사용 알림 배치는 신규 작업이다.
 
 ### 어르신 앱
 
@@ -138,8 +138,8 @@ Firebase FCM
 - 보호자와 연결할 6자리 코드 생성
 - 활동 모니터링 Foreground Service 실행
 - 서비스 시작/중지/heartbeat/오류 내역을 로컬 DB에 기록
-- 휴대폰 잠금해제 이벤트를 로컬 DB에 기록
-- 잠금해제 이벤트를 백엔드에 업로드
+- 활동 이벤트(잠금해제, 충전기 연결/해제)를 로컬 DB에 기록
+- 활동 이벤트를 백엔드에 업로드
 - 네트워크 실패 시 로컬 미전송 이벤트를 보관하고 재시도
 - 매일 저녁 8시 "오늘의 글" 로컬 푸시 발송
 - 오늘의 글 열람 내역을 로컬 DB에 기록
@@ -149,7 +149,7 @@ Firebase FCM
 - 역할 선택 후 보호자 기기로 등록
 - 어르신 앱의 연결 코드 입력
 - 연결된 어르신 목록 조회
-- 어르신별 마지막 잠금해제 시각 조회
+- 어르신별 마지막 활동 시각 조회
 - N일 미사용 FCM 알림 수신
 - 연결 해제
 
@@ -159,8 +159,8 @@ Firebase FCM
 - FCM token 등록/갱신
 - 연결 코드 생성 및 사용
 - active pairing 조회/해제
-- 잠금해제 이벤트 수신
-- 어르신 기기 마지막 잠금해제 시각 저장
+- 활동 이벤트 수신 (잠금해제, 충전 상태 변화 등)
+- 어르신 기기 마지막 활동 시각 저장
 - 서비스 실행 내역 수신 및 저장
 - 미사용 상태 일일 배치 실행
 - 보호자 FCM 발송
@@ -187,16 +187,17 @@ Firebase FCM
  ├─ 활동 모니터링 시작                │
 ```
 
-### 잠금해제 시
+### 활동 감지 시
 
 ```text
-어르신 폰                 백엔드
- │                        │
- ├─ 잠금해제 감지          │
- ├─ 로컬 DB 기록           │
- ├─ POST /activity/unlocks ─▶
- │                        ├─ UnlockEvent 저장
- │                        └─ Device.last_unlocked_at 갱신
+어르신 폰                  백엔드
+ │                         │
+ ├─ 활동 감지               │
+ │  (잠금해제/충전 연결/해제) │
+ ├─ 로컬 DB 기록            │
+ ├─ POST /activity/events ──▶
+ │                         ├─ ActivityEvent 저장
+ │                         └─ Device.last_activity_at 갱신
 ```
 
 ### 매일 콘텐츠 알림
@@ -219,7 +220,7 @@ Firebase FCM
 백엔드 배치                    보호자 폰
  │                              │
  ├─ 매일 실행                    │
- ├─ 마지막 잠금해제 2일 경과 조회 │
+ ├─ 마지막 활동 2일 경과 조회     │
  ├─ active pairing 보호자 조회    │
  ├─ 중복 알림 여부 확인           │
  ├─ FCM 전송 ───────────────────▶│
@@ -229,7 +230,7 @@ Firebase FCM
 알림 예시:
 
 ```text
-홍길동님 휴대폰 사용 기록이 2일 동안 확인되지 않았습니다. 안부 확인이 필요할 수 있습니다.
+홍길동님 휴대폰 활동이 2일 동안 확인되지 않았습니다. 안부 확인이 필요할 수 있습니다.
 ```
 
 ### 앱 삭제/재설치
@@ -256,7 +257,7 @@ Device
 ├── token_hash
 ├── created_at
 ├── last_seen_at
-├── last_unlocked_at
+├── last_activity_at
 └── inactivity_threshold_days
 
 PairingCode
@@ -275,12 +276,12 @@ Pairing
 ├── created_at
 └── disconnected_at
 
-UnlockEvent
+ActivityEvent
 ├── id
 ├── senior_device_id     → Device(senior)
-├── unlocked_at
+├── occurred_at
 ├── received_at
-├── source               (user_present | manual | retry)
+├── source               (user_present | power_connected | power_disconnected)
 └── created_at
 
 ServiceEvent
@@ -296,7 +297,7 @@ InactivityAlert
 ├── senior_device_id     → Device(senior)
 ├── guardian_device_id   → Device(guardian)
 ├── threshold_days
-├── last_unlocked_at
+├── last_activity_at
 ├── sent_at
 ├── status               (sent | skipped | failed)
 └── detail
