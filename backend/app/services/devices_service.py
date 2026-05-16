@@ -5,7 +5,6 @@ from sqlalchemy import select
 
 from app.core.security import create_device_access_token, hash_identifier
 from app.models.device import Device
-from app.models.user import User
 from app.schemas.device import DeviceRegisterRequest, DeviceRegisterResponse
 
 
@@ -47,9 +46,4 @@ async def register_device(db: AsyncSession, request: DeviceRegisterRequest) -> D
 async def update_device_fcm_token(db: AsyncSession, device: Device, fcm_token: str) -> None:
     device.fcm_token = fcm_token
     device.last_seen_at = datetime.now(timezone.utc)
-    await db.commit()
-
-
-async def update_fcm_token(db: AsyncSession, user: User, fcm_token: str) -> None:
-    user.fcm_token = fcm_token
     await db.commit()

@@ -1,5 +1,4 @@
 from collections.abc import Iterator
-from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,9 +6,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
-from app.core.security import get_current_user
 from app.main import app
-from app.models import Device, FallEvent, Pairing, PairingCode, User
+from app.models import Device, Pairing, PairingCode
 from app.models.base import Base
 
 
@@ -20,11 +18,6 @@ def client() -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
-
-
-def auth_as(user_type: str = "senior", user_id: str = "user-1", name: str = "테스트") -> None:
-    user = SimpleNamespace(id=user_id, user_type=user_type, name=name, fcm_token=None)
-    app.dependency_overrides[get_current_user] = lambda: user
 
 
 @pytest.fixture
@@ -51,8 +44,7 @@ def db_client() -> Iterator[TestClient]:
 
     import asyncio
 
-    # Ensure all model modules are imported before create_all sees metadata.
-    _ = (Device, FallEvent, Pairing, PairingCode, User)
+    _ = (Device, Pairing, PairingCode)
     asyncio.run(create_schema())
     app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_get_db

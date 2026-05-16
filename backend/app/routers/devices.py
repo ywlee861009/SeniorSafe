@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import get_current_device, get_current_user
+from app.core.security import get_current_device
 from app.models.device import Device
-from app.models.user import User
 from app.schemas.device import (
     DeviceMeResponse,
     DeviceRegisterRequest,
@@ -12,7 +11,7 @@ from app.schemas.device import (
     FcmTokenRequest,
     MessageResponse,
 )
-from app.services.devices_service import register_device, update_device_fcm_token, update_fcm_token
+from app.services.devices_service import register_device, update_device_fcm_token
 
 router = APIRouter()
 
@@ -43,14 +42,4 @@ async def update_device_token(
     db: AsyncSession = Depends(get_db),
 ) -> MessageResponse:
     await update_device_fcm_token(db, current_device, request.fcm_token)
-    return MessageResponse(message="FCM token updated")
-
-
-@router.put("/token", response_model=MessageResponse)
-async def update_token(
-    request: FcmTokenRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> MessageResponse:
-    await update_fcm_token(db, current_user, request.fcm_token)
     return MessageResponse(message="FCM token updated")
