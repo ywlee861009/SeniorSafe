@@ -36,6 +36,7 @@ dependencies {
     // Core
     implementation(project(":core:ui"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:activity"))
 
     // Firebase
     implementation(platform(libs.firebase.bom))

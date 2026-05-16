@@ -2,6 +2,7 @@ package com.seniorsafe.feature.mvp
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.seniorsafe.core.activity.service.ActivityMonitorController
 import com.seniorsafe.core.activity.db.ActivityRepository
 import com.seniorsafe.core.activity.db.UnlockEventEntity
 import com.seniorsafe.core.activity.service.ActivityServiceStateStore
@@ -20,6 +21,7 @@ data class MvpDashboardUiState(
 
 @HiltViewModel
 class MvpDashboardViewModel @Inject constructor(
+    private val activityMonitorController: ActivityMonitorController,
     private val activityServiceStateStore: ActivityServiceStateStore,
     private val activityRepository: ActivityRepository,
     private val diagnosticsLogStore: DiagnosticsLogStore
@@ -43,8 +45,16 @@ class MvpDashboardViewModel @Inject constructor(
         }
     }
 
-    fun setServiceRunning(running: Boolean) {
-        activityServiceStateStore.refresh("dashboard requested refresh")
+    fun startMonitoring() {
+        activityMonitorController.startByUser("dashboard start button")
+    }
+
+    fun stopMonitoring() {
+        activityMonitorController.stopByUser("dashboard stop button")
+    }
+
+    fun refreshServiceState() {
+        activityMonitorController.refresh("dashboard requested refresh")
     }
 
     fun logAction(message: String) {

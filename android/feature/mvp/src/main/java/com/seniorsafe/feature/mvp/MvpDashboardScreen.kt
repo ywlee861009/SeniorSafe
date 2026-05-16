@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.seniorsafe.core.activity.service.ActivityMonitorService
 import com.seniorsafe.core.diagnostics.DiagnosticLogEntry
 import com.seniorsafe.core.ui.theme.Neutral400
 import com.seniorsafe.core.ui.theme.Neutral600
@@ -121,12 +120,12 @@ fun MvpDashboardScreen(
                 onClick = {
                     if (uiState.isServiceRunning) {
                         viewModel.logAction("stop button clicked")
-                        ActivityMonitorService.stop(context)
+                        viewModel.stopMonitoring()
                     } else {
                         viewModel.logAction("start button clicked")
-                        ActivityMonitorService.start(context)
+                        viewModel.startMonitoring()
                     }
-                    viewModel.setServiceRunning(!uiState.isServiceRunning)
+                    viewModel.refreshServiceState()
                 }
             ) {
                 Text(

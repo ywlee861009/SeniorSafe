@@ -23,7 +23,8 @@ class ActivityServiceStateStore @Inject constructor(
     companion object {
         private const val PREFS_NAME = "activity_monitor_service_state"
         private const val KEY_LAST_HEARTBEAT_AT = "last_heartbeat_at"
-        private const val HEARTBEAT_STALE_MS = 90_000L // 1.5분 (heartbeat 간격 1분 기준)
+        private const val KEY_MANUALLY_STOPPED = "manually_stopped"
+        private const val HEARTBEAT_STALE_MS = 180_000L // 3분 (heartbeat 간격 1분 기준)
         const val MONITOR_INTERVAL_MS = 5_000L
     }
 
@@ -46,6 +47,20 @@ class ActivityServiceStateStore @Inject constructor(
         refresh(reason)
     }
 
+    fun markUserStarted(reason: String) {
+        prefs.edit().putBoolean(KEY_MANUALLY_STOPPED, false).apply()
+        diagnosticsLogStore.add("ActivityServiceState", "manual stop cleared; reason=$reason")
+    }
+
+    fun markUserStopped(reason: String) {
+        prefs.edit()
+            .putBoolean(KEY_MANUALLY_STOPPED, true)
+            .remove(KEY_LAST_HEARTBEAT_AT)
+            .apply()
+        diagnosticsLogStore.add("ActivityServiceState", "manual stop set; reason=$reason")
+        refresh(reason)
+    }
+
     fun markStopped(reason: String) {
         prefs.edit().remove(KEY_LAST_HEARTBEAT_AT).apply()
         refresh(reason)
@@ -58,6 +73,17 @@ class ActivityServiceStateStore @Inject constructor(
         }
         _isRunning.value = running
     }
+
+    fun isManuallyStopped(): Boolean =
+        prefs.getBoolean(KEY_MANUALLY_STOPPED, false)
+
+    fun isHeartbeatStale(now: Long = System.currentTimeMillis()): Boolean {
+        val lastHeartbeatAt = prefs.getLong(KEY_LAST_HEARTBEAT_AT, 0L)
+        return lastHeartbeatAt > 0L && now - lastHeartbeatAt > HEARTBEAT_STALE_MS
+    }
+
+    fun isHeartbeatFreshNow(now: Long = System.currentTimeMillis()): Boolean =
+        isHeartbeatFresh(now)
 
     private fun isHeartbeatFresh(now: Long): Boolean {
         val lastHeartbeatAt = prefs.getLong(KEY_LAST_HEARTBEAT_AT, 0L)
