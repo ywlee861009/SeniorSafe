@@ -18,6 +18,13 @@ import com.seniorsafe.core.diagnostics.DiagnosticsLogStore
 import com.seniorsafe.core.diagnostics.diagnosticsLogStore
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FallDetectionService : Service() {
@@ -43,13 +50,17 @@ class FallDetectionService : Service() {
 
     @Inject lateinit var fallEventBus: FallEventBus
     @Inject lateinit var diagnosticsLogStore: DiagnosticsLogStore
+    @Inject lateinit var serviceStateStore: FallDetectionServiceStateStore
 
     private lateinit var fallDetectionManager: FallDetectionManager
     private lateinit var wakeLock: PowerManager.WakeLock
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var heartbeatJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
         diagnosticsLogStore.add("FallService", "onCreate")
+        startHeartbeat()
 
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
@@ -76,6 +87,7 @@ class FallDetectionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         diagnosticsLogStore.add("FallService", "onStartCommand flags=$flags startId=$startId")
+        serviceStateStore.recordHeartbeat("service onStartCommand")
         return START_STICKY
     }
 
@@ -106,11 +118,14 @@ class FallDetectionService : Service() {
 
     override fun onDestroy() {
         diagnosticsLogStore.add("FallService", "onDestroy")
+        heartbeatJob?.cancel()
+        serviceStateStore.markStopped("service onDestroy")
         fallDetectionManager.stop()
         if (wakeLock.isHeld) {
             wakeLock.release()
             diagnosticsLogStore.add("FallService", "partial wake lock released")
         }
+        serviceScope.cancel()
         super.onDestroy()
     }
 
@@ -131,5 +146,15 @@ class FallDetectionService : Service() {
                 getSystemService(NotificationManager::class.java)
                     .createNotificationChannel(it)
             }
+    }
+
+    private fun startHeartbeat() {
+        heartbeatJob?.cancel()
+        heartbeatJob = serviceScope.launch {
+            while (true) {
+                serviceStateStore.recordHeartbeat("service heartbeat")
+                delay(FallDetectionServiceStateStore.HEARTBEAT_INTERVAL_MS)
+            }
+        }
     }
 }
