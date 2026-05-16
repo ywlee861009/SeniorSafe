@@ -87,6 +87,7 @@ Firebase FCM
 |------|------|----------|
 | Android | Kotlin | 구글 공식 언어, 최신 API 지원 |
 | 낙상 감지 | Android SensorManager (Accelerometer) | 별도 하드웨어 불필요 |
+| Android 진단 로그 | Room | MVP 센서/서비스 로그를 앱 재시작 이후에도 확인 |
 | 백엔드 | Python FastAPI | 비동기 처리, 자동 API 문서화 |
 | 데이터베이스 | PostgreSQL | 기기, 페어링, 낙상 이벤트 관계 표현에 적합 |
 | 기기 인증 | 서버 발급 device access token | 사용자 로그인 없이 API 요청 주체 식별 |
@@ -97,6 +98,17 @@ Firebase FCM
 ---
 
 ## 핵심 기능
+
+### Android 현재 구현 메모
+
+2026-05-16 기준 Android 앱은 아직 최종 온보딩 플로우가 아니라 MVP 낙상 감지 대시보드로 바로 진입한다. 이 대시보드는 센서와 foreground service 검증을 위한 임시 화면이다.
+
+- 낙상 감지 런타임은 `core:fall-detection` 모듈에 있다.
+- MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB에 저장한다.
+- 화면을 종료해도 foreground service가 살아 있으면 센서 샘플과 상태 전이 로그가 계속 저장된다.
+- 서비스 실행 상태 표시는 저장된 boolean이 아니라 service heartbeat 기준으로 동기화한다.
+- root Compose에는 edge-to-edge status bar/navigation bar padding이 적용되어 있다.
+- 로그인 없는 역할 선택/기기 등록/페어링 온보딩은 아직 남은 작업이다.
 
 ### 어르신 앱
 
