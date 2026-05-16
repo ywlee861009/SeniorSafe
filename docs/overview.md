@@ -141,6 +141,8 @@ Firebase FCM
 - 휴대폰 잠금해제 이벤트를 로컬 DB에 기록
 - 잠금해제 이벤트를 백엔드에 업로드
 - 네트워크 실패 시 로컬 미전송 이벤트를 보관하고 재시도
+- 매일 저녁 8시 "오늘의 글" 로컬 푸시 발송
+- 오늘의 글 열람 내역을 로컬 DB에 기록
 
 ### 보호자 앱
 
@@ -196,6 +198,20 @@ Firebase FCM
  │                        ├─ UnlockEvent 저장
  │                        └─ Device.last_unlocked_at 갱신
 ```
+
+### 매일 콘텐츠 알림
+
+```text
+어르신 폰
+ │
+ ├─ 매일 저녁 8시 로컬 푸시 표시
+ │  예: 오늘의 글이 도착했어요
+ ├─ 어르신이 알림 탭
+ ├─ 앱 실행 및 오늘의 글 표시
+ └─ 열람 내역 로컬 DB 기록
+```
+
+이 기능은 어르신이 앱을 자연스럽게 다시 열도록 돕는 보조 장치다. MVP에서는 앱 내장 콘텐츠로 시작하고, 이후 서버에서 매일 콘텐츠를 내려받는 방식으로 확장할 수 있다.
 
 ### 미사용 배치 시
 
@@ -270,7 +286,7 @@ UnlockEvent
 ServiceEvent
 ├── id
 ├── device_id            → Device
-├── event_type           (started | stopped | heartbeat | error | boot_completed)
+├── event_type           (started | stopped | heartbeat | error | boot_completed | daily_content_opened)
 ├── occurred_at
 ├── received_at
 └── detail
