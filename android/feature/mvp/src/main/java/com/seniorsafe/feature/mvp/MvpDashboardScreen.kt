@@ -42,27 +42,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.seniorsafe.core.activity.service.ActivityMonitorService
 import com.seniorsafe.core.diagnostics.DiagnosticLogEntry
-import com.seniorsafe.core.falldetection.service.FallDetectionService
 import com.seniorsafe.core.ui.theme.Neutral400
 import com.seniorsafe.core.ui.theme.Neutral600
 import com.seniorsafe.core.ui.theme.Success500
 
 @Composable
 fun MvpDashboardScreen(
-    onFallDetected: () -> Unit,
+    onFallDetected: () -> Unit = {},
     viewModel: MvpDashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val logs by viewModel.logs.collectAsStateWithLifecycle()
+    val unlocks by viewModel.recentUnlocks.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.logAction("MVP dashboard opened")
-        viewModel.fallDetectedEvent.collect {
-            viewModel.logAction("fall detected event received by dashboard; navigating to alert")
-            onFallDetected()
-        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -73,9 +70,6 @@ fun MvpDashboardScreen(
 
     LaunchedEffect(Unit) {
         val permissions = buildList {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                add(Manifest.permission.ACTIVITY_RECOGNITION)
-            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -83,8 +77,6 @@ fun MvpDashboardScreen(
         if (permissions.isNotEmpty()) {
             viewModel.logAction("requesting runtime permissions: $permissions")
             permissionLauncher.launch(permissions.toTypedArray())
-        } else {
-            viewModel.logAction("no runtime permissions required for this OS version")
         }
     }
 
@@ -94,6 +86,7 @@ fun MvpDashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Service control row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -114,12 +107,12 @@ fun MvpDashboardScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (uiState.isServiceRunning) "보호 중" else "보호 꺼짐",
+                    text = if (uiState.isServiceRunning) "모니터링 중" else "모니터링 꺼짐",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "logs=${logs.size}",
+                    text = "잠금해제 ${unlocks.size}건 기록됨",
                     fontSize = 12.sp,
                     color = Neutral600
                 )
@@ -128,10 +121,10 @@ fun MvpDashboardScreen(
                 onClick = {
                     if (uiState.isServiceRunning) {
                         viewModel.logAction("stop button clicked")
-                        FallDetectionService.stop(context)
+                        ActivityMonitorService.stop(context)
                     } else {
                         viewModel.logAction("start button clicked")
-                        FallDetectionService.start(context)
+                        ActivityMonitorService.start(context)
                     }
                     viewModel.setServiceRunning(!uiState.isServiceRunning)
                 }
@@ -161,6 +154,7 @@ fun MvpDashboardScreen(
             }
         }
 
+        // Log header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

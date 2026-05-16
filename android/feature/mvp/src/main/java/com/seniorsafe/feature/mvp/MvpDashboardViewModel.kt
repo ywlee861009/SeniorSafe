@@ -2,12 +2,15 @@ package com.seniorsafe.feature.mvp
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.seniorsafe.core.activity.db.ActivityRepository
+import com.seniorsafe.core.activity.db.UnlockEventEntity
+import com.seniorsafe.core.activity.service.ActivityServiceStateStore
 import com.seniorsafe.core.diagnostics.DiagnosticsLogStore
-import com.seniorsafe.core.falldetection.service.FallEventBus
-import com.seniorsafe.core.falldetection.service.FallDetectionServiceStateStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,28 +20,31 @@ data class MvpDashboardUiState(
 
 @HiltViewModel
 class MvpDashboardViewModel @Inject constructor(
-    private val fallEventBus: FallEventBus,
-    private val serviceStateStore: FallDetectionServiceStateStore,
+    private val activityServiceStateStore: ActivityServiceStateStore,
+    private val activityRepository: ActivityRepository,
     private val diagnosticsLogStore: DiagnosticsLogStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MvpDashboardUiState())
     val uiState: StateFlow<MvpDashboardUiState> = _uiState
 
-    val fallDetectedEvent = fallEventBus.fallDetectedEvent
     val logs = diagnosticsLogStore.entries
+
+    val recentUnlocks: StateFlow<List<UnlockEventEntity>> =
+        activityRepository.observeRecentUnlocks(50)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         viewModelScope.launch {
-            serviceStateStore.isRunning.collect { running ->
+            activityServiceStateStore.isRunning.collect { running ->
                 _uiState.value = _uiState.value.copy(isServiceRunning = running)
-                diagnosticsLogStore.add("MvpDashboard", "service running state synced: running=$running")
+                diagnosticsLogStore.add("MvpDashboard", "activity service running=$running")
             }
         }
     }
 
     fun setServiceRunning(running: Boolean) {
-        serviceStateStore.refresh("dashboard requested refresh")
+        activityServiceStateStore.refresh("dashboard requested refresh")
     }
 
     fun logAction(message: String) {

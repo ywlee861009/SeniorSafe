@@ -25,6 +25,7 @@ include(":core:network")
 include(":core:datastore")
 include(":core:data")
 include(":core:diagnostics")
+include(":core:activity")
 include(":core:fall-detection")
 include(":core:ui")
 
