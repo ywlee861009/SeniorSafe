@@ -1,28 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Foreground service -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
-
-    <!-- Sensor permissions -->
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
-
-    <!-- Unkillable service support -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <!-- Hardware requirement -->
-    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true" />
 
     <application>
-        <service
-            android:name="com.seniorsafe.feature.mvp.service.MvpFallDetectionService"
-            android:exported="false"
-            android:foregroundServiceType="health" />
-
         <receiver
             android:name="com.seniorsafe.feature.mvp.receiver.BootReceiver"
             android:exported="true">

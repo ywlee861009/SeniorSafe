@@ -9,15 +9,24 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,12 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.seniorsafe.core.ui.component.SeniorOutlinedButton
-import com.seniorsafe.core.ui.component.SeniorPrimaryButton
+import com.seniorsafe.core.diagnostics.DiagnosticLogEntry
+import com.seniorsafe.core.falldetection.service.FallDetectionService
 import com.seniorsafe.core.ui.theme.Neutral400
 import com.seniorsafe.core.ui.theme.Neutral600
 import com.seniorsafe.core.ui.theme.Success500
-import com.seniorsafe.feature.mvp.service.MvpFallDetectionService
 
 @Composable
 fun MvpDashboardScreen(
@@ -45,17 +54,22 @@ fun MvpDashboardScreen(
     viewModel: MvpDashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val logs by viewModel.logs.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // 낙상 이벤트 수신 → 알림 화면 전환
     LaunchedEffect(Unit) {
-        viewModel.fallDetectedEvent.collect { onFallDetected() }
+        viewModel.logAction("MVP dashboard opened")
+        viewModel.fallDetectedEvent.collect {
+            viewModel.logAction("fall detected event received by dashboard; navigating to alert")
+            onFallDetected()
+        }
     }
 
-    // 런타임 권한 요청
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* 결과 처리 불필요 — 거부해도 서비스 시작 가능 */ }
+    ) { result ->
+        viewModel.logAction("permission result: $result")
+    }
 
     LaunchedEffect(Unit) {
         val permissions = buildList {
@@ -67,76 +81,162 @@ fun MvpDashboardScreen(
             }
         }
         if (permissions.isNotEmpty()) {
+            viewModel.logAction("requesting runtime permissions: $permissions")
             permissionLauncher.launch(permissions.toTypedArray())
+        } else {
+            viewModel.logAction("no runtime permissions required for this OS version")
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = "SeniorSafe MVP",
-            fontSize = 20.sp,
-            color = Neutral600
-        )
-        Spacer(Modifier.height(48.dp))
-
-        // 상태 인디케이터
-        Box(
+        Row(
             modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(if (uiState.isServiceRunning) Success500 else Neutral400)
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = if (uiState.isServiceRunning) "보호 중" else "보호 꺼짐",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = if (uiState.isServiceRunning)
-                "낙상 감지 서비스가 실행 중입니다"
-            else
-                "서비스를 켜면 낙상을 감지합니다",
-            fontSize = 14.sp,
-            color = Neutral600,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(48.dp))
-
-        SeniorPrimaryButton(
-            text = if (uiState.isServiceRunning) "서비스 끄기" else "서비스 켜기",
-            onClick = {
-                if (uiState.isServiceRunning) {
-                    MvpFallDetectionService.stop(context)
-                } else {
-                    MvpFallDetectionService.start(context)
-                }
-                viewModel.setServiceRunning(!uiState.isServiceRunning)
+                .fillMaxWidth()
+                .height(84.dp)
+                .border(1.dp, Neutral400, RoundedCornerShape(8.dp))
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(if (uiState.isServiceRunning) Success500 else Neutral400)
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if (uiState.isServiceRunning) "보호 중" else "보호 꺼짐",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "logs=${logs.size}",
+                    fontSize = 12.sp,
+                    color = Neutral600
+                )
             }
-        )
-        Spacer(Modifier.height(16.dp))
-
-        // 배터리 최적화 예외 요청
-        SeniorOutlinedButton(
-            text = "배터리 최적화 해제",
-            onClick = {
-                val pm = context.getSystemService(PowerManager::class.java)
-                if (!pm.isIgnoringBatteryOptimizations(context.packageName)) {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                            Uri.parse("package:${context.packageName}")
+            Button(
+                onClick = {
+                    if (uiState.isServiceRunning) {
+                        viewModel.logAction("stop button clicked")
+                        FallDetectionService.stop(context)
+                    } else {
+                        viewModel.logAction("start button clicked")
+                        FallDetectionService.start(context)
+                    }
+                    viewModel.setServiceRunning(!uiState.isServiceRunning)
+                }
+            ) {
+                Text(
+                    text = if (uiState.isServiceRunning) "끄기" else "켜기",
+                    fontSize = 13.sp
+                )
+            }
+            OutlinedButton(
+                onClick = {
+                    viewModel.logAction("battery optimization button clicked")
+                    val pm = context.getSystemService(PowerManager::class.java)
+                    if (!pm.isIgnoringBatteryOptimizations(context.packageName)) {
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                Uri.parse("package:${context.packageName}")
+                            )
                         )
-                    )
+                    } else {
+                        viewModel.logAction("battery optimization already ignored")
+                    }
                 }
+            ) {
+                Text(text = "배터리", fontSize = 13.sp)
             }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Runtime Log",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            OutlinedButton(onClick = { viewModel.clearLogs() }) {
+                Text(text = "Clear", fontSize = 12.sp)
+            }
+        }
+
+        LogConsole(
+            logs = logs,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
         )
+    }
+}
+
+@Composable
+private fun LogConsole(
+    logs: List<DiagnosticLogEntry>,
+    modifier: Modifier = Modifier
+) {
+    if (logs.isEmpty()) {
+        Box(
+            modifier = modifier
+                .background(Color(0xFF111827), RoundedCornerShape(8.dp))
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "로그가 아직 없습니다",
+                color = Color(0xFFCBD5E1),
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = modifier
+            .background(Color(0xFF111827), RoundedCornerShape(8.dp))
+            .padding(12.dp)
+            .fillMaxHeight(),
+        reverseLayout = true,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        items(logs.asReversed()) { entry ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = entry.timestamp,
+                    color = Color(0xFF93C5FD),
+                    fontSize = 11.sp,
+                    modifier = Modifier.width(82.dp)
+                )
+                Text(
+                    text = entry.source,
+                    color = Color(0xFFFBBF24),
+                    fontSize = 11.sp,
+                    modifier = Modifier.width(96.dp)
+                )
+                Text(
+                    text = entry.message,
+                    color = Color(0xFFE5E7EB),
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }

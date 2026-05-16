@@ -1,4 +1,4 @@
-package com.seniorsafe.feature.mvp.service
+package com.seniorsafe.core.falldetection.service
 
 import android.app.AlarmManager
 import android.app.Notification
@@ -14,70 +14,80 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
+import com.seniorsafe.core.diagnostics.DiagnosticsLogStore
+import com.seniorsafe.core.diagnostics.diagnosticsLogStore
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MvpFallDetectionService : Service() {
+class FallDetectionService : Service() {
 
     companion object {
-        const val CHANNEL_ID = "mvp_fall_detection_channel"
+        const val CHANNEL_ID = "fall_detection_channel"
         const val NOTIFICATION_ID = 2001
 
         fun start(context: Context) {
+            context.diagnosticsLogStore().add("FallService", "start requested")
             context.startForegroundService(
-                Intent(context, MvpFallDetectionService::class.java)
+                Intent(context, FallDetectionService::class.java)
             )
         }
 
         fun stop(context: Context) {
+            context.diagnosticsLogStore().add("FallService", "stop requested")
             context.stopService(
-                Intent(context, MvpFallDetectionService::class.java)
+                Intent(context, FallDetectionService::class.java)
             )
         }
     }
 
-    @Inject lateinit var fallEventBus: MvpFallEventBus
+    @Inject lateinit var fallEventBus: FallEventBus
+    @Inject lateinit var diagnosticsLogStore: DiagnosticsLogStore
 
-    private lateinit var fallDetectionManager: MvpFallDetectionManager
+    private lateinit var fallDetectionManager: FallDetectionManager
     private lateinit var wakeLock: PowerManager.WakeLock
 
     override fun onCreate() {
         super.onCreate()
+        diagnosticsLogStore.add("FallService", "onCreate")
 
-        // WakeLock — CPU 슬립 방지
-        val pm = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "SeniorSafe:MvpFallDetection"
+            "SeniorSafe:FallDetection"
         ).apply { acquire() }
+        diagnosticsLogStore.add("FallService", "partial wake lock acquired")
 
-        // 센서 매니저 + 낙상 감지
         val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        fallDetectionManager = MvpFallDetectionManager(sensorManager) {
+        fallDetectionManager = FallDetectionManager(sensorManager, diagnosticsLogStore) {
             fallEventBus.publishFallDetected()
         }
 
         createNotificationChannel()
+        diagnosticsLogStore.add("FallService", "notification channel ready")
         startForeground(
             NOTIFICATION_ID,
             buildNotification(),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
         )
+        diagnosticsLogStore.add("FallService", "foreground service started")
         fallDetectionManager.start()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        diagnosticsLogStore.add("FallService", "onStartCommand flags=$flags startId=$startId")
         return START_STICKY
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // 앱 스와이프 종료 시 1초 후 서비스 재시작
-        val restartIntent = Intent(this, MvpFallDetectionService::class.java).apply {
+        diagnosticsLogStore.add("FallService", "task removed; scheduling restart")
+        val restartIntent = Intent(this, FallDetectionService::class.java).apply {
             setPackage(packageName)
         }
         val pendingIntent = PendingIntent.getService(
-            this, 1, restartIntent,
+            this,
+            1,
+            restartIntent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
@@ -89,9 +99,18 @@ class MvpFallDetectionService : Service() {
         super.onTaskRemoved(rootIntent)
     }
 
+    override fun onTrimMemory(level: Int) {
+        diagnosticsLogStore.add("FallService", "onTrimMemory level=$level")
+        super.onTrimMemory(level)
+    }
+
     override fun onDestroy() {
+        diagnosticsLogStore.add("FallService", "onDestroy")
         fallDetectionManager.stop()
-        if (wakeLock.isHeld) wakeLock.release()
+        if (wakeLock.isHeld) {
+            wakeLock.release()
+            diagnosticsLogStore.add("FallService", "partial wake lock released")
+        }
         super.onDestroy()
     }
 
@@ -99,7 +118,7 @@ class MvpFallDetectionService : Service() {
 
     private fun buildNotification(): Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("SeniorSafe MVP")
+            .setContentTitle("SeniorSafe")
             .setContentText("낙상 감지 서비스 실행 중")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setOngoing(true)
@@ -107,7 +126,7 @@ class MvpFallDetectionService : Service() {
             .build()
 
     private fun createNotificationChannel() {
-        NotificationChannel(CHANNEL_ID, "MVP 낙상 감지", NotificationManager.IMPORTANCE_LOW)
+        NotificationChannel(CHANNEL_ID, "낙상 감지", NotificationManager.IMPORTANCE_LOW)
             .also {
                 getSystemService(NotificationManager::class.java)
                     .createNotificationChannel(it)

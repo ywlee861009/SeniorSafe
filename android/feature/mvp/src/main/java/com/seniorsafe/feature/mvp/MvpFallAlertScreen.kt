@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.seniorsafe.core.ui.component.FallCancelButton
 import com.seniorsafe.core.ui.theme.Danger500
 import com.seniorsafe.core.ui.theme.Neutral000
@@ -26,16 +27,19 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun MvpFallAlertScreen(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    viewModel: MvpFallAlertViewModel = hiltViewModel()
 ) {
     var countdown by remember { mutableIntStateOf(30) }
 
     LaunchedEffect(Unit) {
+        viewModel.log("fall alert screen opened; countdown=30")
         while (countdown > 0) {
             delay(1000L)
             countdown--
+            viewModel.log("countdown tick: $countdown")
         }
-        // MVP: API 호출 없이 로컬에서 카운트다운 종료 후 dismiss
+        viewModel.log("countdown finished; MVP dismiss without API call")
         onDismiss()
     }
 
@@ -70,7 +74,10 @@ fun MvpFallAlertScreen(
             )
             Spacer(Modifier.height(48.dp))
             FallCancelButton(
-                onClick = onDismiss
+                onClick = {
+                    viewModel.log("fall alert cancelled by user")
+                    onDismiss()
+                }
             )
         }
     }

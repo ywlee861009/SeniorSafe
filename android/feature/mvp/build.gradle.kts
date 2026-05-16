@@ -9,6 +9,8 @@ android { namespace = "com.seniorsafe.feature.mvp" }
 dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:model"))
+    implementation(project(":core:diagnostics"))
+    implementation(project(":core:fall-detection"))
 
     implementation(libs.navigation.compose)
     implementation(libs.hilt.navigation.compose)

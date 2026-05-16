@@ -24,6 +24,8 @@ include(":core:model")
 include(":core:network")
 include(":core:datastore")
 include(":core:data")
+include(":core:diagnostics")
+include(":core:fall-detection")
 include(":core:ui")
 
 // Feature
