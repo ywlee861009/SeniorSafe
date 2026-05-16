@@ -6,19 +6,34 @@ P0
 
 ## 문제
 
-낙상 이벤트와 보호자 알림은 제품 핵심이다. 새 구조에서는 사용자 계정 관계가 아니라 어르신 device와 연결된 보호자 device 목록을 기준으로 낙상 이벤트, 취소, 이력, FCM 발송을 처리해야 한다.
+낙상 이벤트와 보호자 알림은 제품 핵심이다. User 기반 낙상 API는 이미 제거되었으므로, Device/Pairing 기준의 낙상 이벤트 API를 새로 구현해야 한다.
+
+## 선행 완료 사항
+
+- User 모델, FallEvent 모델, fall 라우터/서비스/스키마 전부 제거 완료
+- 백엔드는 Device 토큰 인증 전용으로 전환 완료
 
 ## 작업 범위
 
-- 낙상 이벤트 모델이 senior device를 기준으로 저장되도록 변경한다.
-- 보호자 알림 대상 조회를 active pairing 기준으로 변경한다.
-- 낙상 감지 후 30초 취소 정책을 확정한다.
+### 백엔드
+
+- FallEvent 모델 신규 작성: `senior_device_id` FK 기준
+- 낙상 API 구현:
+  - `POST /fall/events` — 어르신 기기가 낙상 보고 (device 인증)
+  - `POST /fall/events/cancelled` — 어르신 기기가 오감지 취소 기록 (device 인증)
+  - `GET /fall/history/{senior_device_id}` — 어르신 본인 또는 active pairing 보호자가 이력 조회 (device 인증)
+- FCM 발송 대상: active pairing의 보호자 device fcm_token
+- 이벤트 상태: reported / cancelled / notify_failed
+- Alembic 마이그레이션 작성
+
+### Android
+
+- 30초 취소 정책 확정 및 구현
   - Android가 30초 대기 후 이벤트를 전송할지
   - 즉시 pending 이벤트를 만들고 취소 시 cancel할지
-- 선택한 정책에 맞춰 API, 서비스, Android ViewModel, UI를 수정한다.
-- 취소된 오감지가 보호자에게 전송되지 않도록 보장한다.
-- 낙상 이력에서 보고됨/취소됨/알림 전송 실패 상태를 구분한다.
-- 센서 중복 감지로 같은 카운트다운이 여러 번 열리지 않도록 막는다.
+- 취소된 오감지가 보호자에게 전송되지 않도록 보장
+- 센서 중복 감지로 같은 카운트다운이 여러 번 열리지 않도록 방지
+- 낙상 이력 화면에서 보고됨/취소됨/알림 전송 실패 상태 구분
 
 ## 완료 조건
 

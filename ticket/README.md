@@ -21,26 +21,27 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 ## 현재 진행상황
 
-- Android 멀티 모듈 앱, 어르신/보호자 MVP 화면, 낙상 감지 서비스, 백엔드 API, Docker Compose 골격은 존재한다.
-- 기존 구현에는 로그인, 사용자 role, auth token, user 기반 보호자-어르신 관계가 포함되어 있다.
-- 새 방향에서는 기존 인증/사용자 흐름을 걷어내거나 호환 계층으로 축소해야 한다.
-- 낙상 이벤트, 이력, FCM 발송은 device/pairing 기준으로 다시 정리해야 한다.
+### 백엔드
 
-## Android 최신 상태
+- User 기반 API(auth, fall, user-pairing) 전면 제거 완료. Device 토큰 인증 전용.
+- 남은 API: health, devices(register/me/fcm-token), pairing(codes), pairings(claim/list/disconnect)
+- 낙상 이벤트 API는 Device 기반으로 신규 구현 필요 (todo/004).
+- DB 마이그레이션(users/fall_events 테이블 drop, pairing User FK 칼럼 drop) 별도 필요.
+
+### Android
 
 - 앱 진입점은 아직 새 온보딩/페어링 플로우가 아니라 MVP 낙상 감지 대시보드로 바로 진입한다.
 - `enableEdgeToEdge()` 환경에서 루트 Compose에 status bar/navigation bar padding을 적용했다.
 - 낙상 감지 런타임을 `feature:mvp`에서 `core:fall-detection` 모듈로 분리했다.
 - MVP 디버깅 로그 저장을 `core:diagnostics` 모듈로 분리하고 Room DB(`seniorsafe_diagnostics.db`)에 최근 500개 로그를 저장한다.
 - MVP 대시보드는 작은 서비스 제어 영역과 Runtime Log 콘솔 중심 UI로 변경했다.
-- 로그에는 서비스 시작/중지 요청, service lifecycle, foreground service 시작, wake lock, sensor sample, 상태 전이, 낙상 이벤트 발행/수신, 알림 카운트다운이 기록된다.
-- 서비스 실행 상태 UI는 저장된 boolean이 아니라 service heartbeat 기준으로 동기화한다. 서비스가 1초마다 heartbeat를 기록하고, 최근 5초 안에 heartbeat가 없으면 UI가 `보호 꺼짐`으로 내려간다.
+- 서비스 실행 상태 UI는 service heartbeat 기준으로 동기화한다.
 - Android 빌드 검증: 2026-05-16 기준 `cd android && ./gradlew assembleDebug` 통과.
 
 ## Android 남은 핵심 작업
 
 - `todo/003`: MVP 대시보드 직행을 제거하고, 로그인 없는 역할 선택/기기 등록/페어링 온보딩을 구현해야 한다.
-- `todo/004`: 낙상 이벤트 보고, 취소, FCM 발송, 이력을 device/pairing 기준으로 재구성해야 한다.
+- `todo/004`: 낙상 이벤트 보고, 취소, FCM 발송, 이력을 device/pairing 기준으로 신규 구현해야 한다.
 - `todo/008`: 현재 센서 상태 머신은 로그 수집/디버깅 기반은 마련됐지만, threshold와 정지 판단은 실제 테스트 데이터로 재검증해야 한다.
 - `feature:senior`에 남은 기존 낙상 감지 서비스 구현은 `core:fall-detection`으로 통합해 중복을 제거해야 한다.
 
