@@ -35,6 +35,7 @@ class ActivityMonitorService : Service() {
         const val CHANNEL_ID = "activity_monitor_channel"
         const val NOTIFICATION_ID = 3001
         private const val HEARTBEAT_INTERVAL_MS = 60_000L
+        private const val ACTION_REATTACH = "com.seniorsafe.REATTACH_NOTIFICATION"
 
         fun start(context: Context) {
             KeroLog.d("ActivityMonitorService", "start() called — dispatching startForegroundService")
@@ -96,9 +97,14 @@ class ActivityMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        KeroLog.d("ActivityMonitorService", "onStartCommand flags=$flags startId=$startId")
+        KeroLog.d("ActivityMonitorService", "onStartCommand flags=$flags startId=$startId action=${intent?.action}")
         log("onStartCommand flags=$flags startId=$startId")
         serviceStateStore.recordHeartbeat("onStartCommand")
+        if (intent?.action == ACTION_REATTACH) {
+            KeroLog.d("ActivityMonitorService", "notification dismissed — reattaching")
+            log("notification dismissed — reattaching")
+            startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        }
         return START_STICKY
     }
 
@@ -229,14 +235,21 @@ class ActivityMonitorService : Service() {
         diagnosticsLogStore.add("ActivityMonitor", message)
     }
 
-    private fun buildNotification(): Notification =
-        NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun buildNotification(): Notification {
+        val reattachIntent = PendingIntent.getService(
+            this, 2,
+            Intent(this, ActivityMonitorService::class.java).apply { action = ACTION_REATTACH },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("SeniorSafe")
             .setContentText("활동 모니터링 실행 중")
             .setSmallIcon(android.R.drawable.ic_menu_recent_history)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setDeleteIntent(reattachIntent)
             .build()
+    }
 
     private fun createNotificationChannel() {
         NotificationChannel(CHANNEL_ID, "활동 모니터링", NotificationManager.IMPORTANCE_LOW)
