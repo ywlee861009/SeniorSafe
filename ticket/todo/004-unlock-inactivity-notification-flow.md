@@ -15,6 +15,9 @@ P0
 - 백엔드는 Device 토큰 인증 전용으로 전환 완료.
 - Device/Pairing/PairingCode 모델과 API 구현 완료.
 - Android에는 Room 기반 진단 로그 저장 구조와 foreground service heartbeat 패턴이 있다.
+- Android에는 `core:activity` 기반 잠금해제 이벤트 로컬 DB, 서비스 이벤트 로컬 DB, foreground activity monitor service가 있다.
+- Android 어르신 홈에서 활동 모니터링 시작/중지, 최근 잠금해제 시각, 오늘 사용 기록 수를 표시한다.
+- 오늘의 글 화면, 매일 저녁 8시 로컬 알림 예약, 알림 탭 시 오늘의 글 route 이동 구조가 구현됐다.
 
 ## 작업 범위
 
@@ -61,22 +64,18 @@ P0
 
 ### Android
 
-- 어르신 모드에서 잠금해제 감지 구현:
-  - `ACTION_USER_PRESENT` receiver
-  - 잠금해제 시각 로컬 DB 기록
-  - 백엔드 `POST /activity/unlocks` 업로드
+- 기존 `core:activity` 로컬 기록을 백엔드 API와 연결:
+  - 잠금해제 이벤트 백엔드 `POST /activity/unlocks` 업로드
+  - 서비스 이벤트 백엔드 `POST /activity/service-events` 업로드
   - 네트워크 실패 시 미전송 이벤트 보관 및 재시도
-- 활동 모니터링 foreground service 구현 또는 기존 서비스 구조 재사용:
-  - 서비스 시작/중지/heartbeat/error 로컬 DB 기록
+  - 업로드 성공 시 로컬 `uploaded` 상태 갱신
+- 활동 모니터링 foreground service 보강:
+  - heartbeat/error 로컬 기록 누락 여부 점검
   - 주요 서비스 이벤트 백엔드 업로드
-  - 부팅 후 재시작 정책 검토
-- 매일 콘텐츠 로컬 알림 구현:
-  - 매일 저녁 8시 로컬 푸시 예약
-  - 푸시 문구는 "오늘의 글" 또는 "오늘의 말씀"처럼 앱을 열 유인을 주는 표현 사용
-  - MVP 기본 표현은 종교색을 강제하지 않는 "오늘의 글"로 사용
-  - 알림 탭 시 오늘의 글 화면으로 이동
-  - 오늘의 글 열람 시각을 로컬 DB에 기록
-  - 필요 시 `ServiceEvent` 또는 별도 로컬 이벤트로 발송/열람 내역 기록
+  - 부팅 후 재시작 정책 실기기 검증
+- 오늘의 글 로컬 알림 보강:
+  - 알림 발송 시각 로컬 이벤트 기록 추가
+  - 열람 이벤트 백엔드 업로드 여부 결정
 - MVP 진단 화면에서 확인 가능한 내역:
   - 서비스 실행 내역
   - 잠금해제 내역
