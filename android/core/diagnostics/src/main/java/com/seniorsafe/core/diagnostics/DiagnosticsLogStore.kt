@@ -1,6 +1,6 @@
 package com.seniorsafe.core.diagnostics
 
-import android.util.Log
+import com.seniorsafe.core.util.KeroLog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -29,7 +29,6 @@ class DiagnosticsLogStore @Inject constructor(
 
     companion object {
         private const val MAX_ENTRIES = 500
-        private const val ANDROID_LOG_TAG = "SeniorSafeMvp"
     }
 
     private val formatter = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
@@ -62,7 +61,7 @@ class DiagnosticsLogStore @Inject constructor(
             dao.insert(entry)
             dao.pruneToLatest(MAX_ENTRIES)
         }
-        Log.d(ANDROID_LOG_TAG, "[$source] $message")
+        KeroLog.d(source, message)
     }
 
     @Synchronized
@@ -79,6 +78,6 @@ class DiagnosticsLogStore @Inject constructor(
                 )
             )
         }
-        Log.d(ANDROID_LOG_TAG, "diagnostics database cleared")
+        KeroLog.d("Diagnostics", "diagnostics database cleared")
     }
 }

@@ -4,11 +4,11 @@ import android.util.Log
 
 /**
  * Usage:
- *   KeroLog.d("message")              // tag = 호출한 클래스 이름 (자동)
- *   KeroLog.d("MyTag", "message")     // tag = 명시
+ *   KeroLog.d("message")                        // [CallerClass] message
+ *   KeroLog.d("ActivityMonitorService", "msg")  // [ActivityMonitorService] msg
  *   KeroLog.e("message", throwable)
  *
- * Filter in logcat:
+ * Logcat filter:
  *   adb logcat -s Kero
  */
 object KeroLog {
@@ -16,26 +16,23 @@ object KeroLog {
     private const val TAG = "Kero"
     private val keroClass = KeroLog::class.java.name
 
-    fun d(msg: String) = print(Log.DEBUG, callerTag(), msg)
-    fun d(tag: String, msg: String) = print(Log.DEBUG, tag, msg)
+    fun d(msg: String) = Log.d(TAG, "[${callerTag()}] $msg")
+    fun d(tag: String, msg: String) = Log.d(TAG, "[$tag] $msg")
 
-    fun i(msg: String) = print(Log.INFO, callerTag(), msg)
-    fun i(tag: String, msg: String) = print(Log.INFO, tag, msg)
+    fun i(msg: String) = Log.i(TAG, "[${callerTag()}] $msg")
+    fun i(tag: String, msg: String) = Log.i(TAG, "[$tag] $msg")
 
-    fun w(msg: String) = print(Log.WARN, callerTag(), msg)
-    fun w(tag: String, msg: String) = print(Log.WARN, tag, msg)
+    fun w(msg: String) = Log.w(TAG, "[${callerTag()}] $msg")
+    fun w(tag: String, msg: String) = Log.w(TAG, "[$tag] $msg")
 
-    fun e(msg: String, tr: Throwable? = null) = print(Log.ERROR, callerTag(), msg, tr)
-    fun e(tag: String, msg: String, tr: Throwable? = null) = print(Log.ERROR, tag, msg, tr)
+    fun e(msg: String, tr: Throwable? = null) {
+        val text = "[${callerTag()}] $msg"
+        if (tr != null) Log.e(TAG, text, tr) else Log.e(TAG, text)
+    }
 
-    private fun print(level: Int, tag: String, msg: String, tr: Throwable? = null) {
+    fun e(tag: String, msg: String, tr: Throwable? = null) {
         val text = "[$tag] $msg"
-        when (level) {
-            Log.DEBUG -> Log.d(TAG, text)
-            Log.INFO  -> Log.i(TAG, text)
-            Log.WARN  -> Log.w(TAG, text)
-            Log.ERROR -> if (tr != null) Log.e(TAG, text, tr) else Log.e(TAG, text)
-        }
+        if (tr != null) Log.e(TAG, text, tr) else Log.e(TAG, text)
     }
 
     private fun callerTag(): String =
@@ -44,5 +41,5 @@ object KeroLog {
             .firstOrNull()
             ?.className
             ?.substringAfterLast('.')
-            ?: "Unknown"
+            ?: TAG
 }

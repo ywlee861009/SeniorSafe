@@ -6,6 +6,7 @@ plugins {
 android { namespace = "com.seniorsafe.core.diagnostics" }
 
 dependencies {
+    implementation(project(":core:util"))
     implementation(libs.coroutines.android)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
