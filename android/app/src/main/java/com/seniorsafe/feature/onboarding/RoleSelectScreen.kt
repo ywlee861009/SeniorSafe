@@ -1,0 +1,96 @@
+package com.seniorsafe.feature.onboarding
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.seniorsafe.core.datastore.DeviceDataStore
+import com.seniorsafe.core.model.DeviceRole
+import com.seniorsafe.core.ui.component.SeniorOutlinedButton
+import com.seniorsafe.core.ui.component.SeniorPrimaryButton
+import com.seniorsafe.core.ui.theme.Neutral600
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.launch
+
+@Composable
+fun RoleSelectScreen(
+    onSeniorSelected: () -> Unit,
+    onGuardianSelected: () -> Unit,
+    viewModel: RoleSelectViewModel = hiltViewModel()
+) {
+    var isSaving by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "누가 이 휴대폰을 사용하나요?",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "선택한 뒤 바로 연결을 시작할 수 있어요.",
+            color = Neutral600,
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(48.dp))
+        SeniorPrimaryButton(
+            text = "어르신이에요",
+            enabled = !isSaving,
+            onClick = {
+                isSaving = true
+                viewModel.selectRole(DeviceRole.SENIOR, onSeniorSelected)
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        SeniorOutlinedButton(
+            text = "보호자예요",
+            onClick = {
+                if (!isSaving) {
+                    isSaving = true
+                    viewModel.selectRole(DeviceRole.GUARDIAN, onGuardianSelected)
+                }
+            }
+        )
+    }
+}
+
+@HiltViewModel
+class RoleSelectViewModel @Inject constructor(
+    private val deviceDataStore: DeviceDataStore
+) : ViewModel() {
+    fun selectRole(role: DeviceRole, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            deviceDataStore.saveRole(role)
+            onComplete()
+        }
+    }
+}

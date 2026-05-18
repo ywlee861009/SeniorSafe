@@ -68,3 +68,36 @@ data class FallHistoryResponse(val events: List<FallHistoryItem>)
 data class FcmTokenRequest(@SerializedName("fcm_token") val fcmToken: String)
 
 data class MessageResponse(val message: String)
+
+// ─── Local Device MVP ────────────────────────────────────────────────────────
+
+enum class DeviceRole(val value: String) {
+    SENIOR("senior"),
+    GUARDIAN("guardian");
+
+    companion object {
+        fun fromValue(value: String?): DeviceRole? =
+            entries.firstOrNull { it.value == value }
+    }
+}
+
+enum class PairingStatus(val value: String) {
+    UNPAIRED("unpaired"),
+    PAIRED("paired");
+
+    companion object {
+        fun fromValue(value: String?): PairingStatus =
+            entries.firstOrNull { it.value == value } ?: UNPAIRED
+    }
+}
+
+data class LocalDeviceState(
+    val localDeviceId: String?,
+    val role: DeviceRole?,
+    val pairingStatus: PairingStatus
+)
+
+data class DeviceRegistrationDraft(
+    val localDeviceId: String,
+    val role: DeviceRole
+)

@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":feature:mvp"))
 
     // Core
+    implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":core:datastore"))
     implementation(project(":core:activity"))

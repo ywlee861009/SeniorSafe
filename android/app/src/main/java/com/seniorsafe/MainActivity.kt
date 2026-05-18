@@ -1,5 +1,6 @@
 package com.seniorsafe
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,47 +9,79 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.seniorsafe.core.activity.service.ActivityMonitorController
-import com.seniorsafe.core.datastore.TokenDataStore
+import com.seniorsafe.core.datastore.DeviceDataStore
+import com.seniorsafe.core.model.DeviceRole
+import com.seniorsafe.core.model.LocalDeviceState
+import com.seniorsafe.core.model.PairingStatus
 import com.seniorsafe.core.ui.theme.SeniorSafeTheme
 import com.seniorsafe.navigation.AppNavHost
 import com.seniorsafe.navigation.Route
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var tokenDataStore: TokenDataStore
-    @Inject lateinit var activityMonitorController: ActivityMonitorController
+    @Inject lateinit var deviceDataStore: DeviceDataStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        lifecycleScope.launch {
-            activityMonitorController.ensureServiceRunning("app opened")
-        }
 
         setContent {
             SeniorSafeTheme {
-                // MVP: 로그인 스킵, 바로 낙상감지 대시보드로
                 val navController = rememberNavController()
+                val startDestination by produceState<String?>(initialValue = null) {
+                    value = intent.getStringExtra(EXTRA_START_ROUTE)
+                        ?: deviceDataStore.getDeviceState().toStartDestination()
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .navigationBarsPadding()
+                        .navigationBarsPadding(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    AppNavHost(
-                        navController = navController,
-                        startDestination = Route.MVP_DASHBOARD
-                    )
+                    if (startDestination == null) {
+                        CircularProgressIndicator()
+                    } else {
+                        AppNavHost(
+                            navController = navController,
+                            startDestination = startDestination ?: Route.ROLE_SELECT,
+                            onRoleSelected = { destination ->
+                                navController.navigate(destination) {
+                                    popUpTo(Route.ROLE_SELECT) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    companion object {
+        const val EXTRA_START_ROUTE = "seniorsafe_start_route"
+    }
 }
+
+private fun LocalDeviceState.toStartDestination(): String =
+    when (role) {
+        null -> Route.ROLE_SELECT
+        DeviceRole.SENIOR ->
+            if (pairingStatus == PairingStatus.PAIRED) Route.SENIOR_HOME else Route.PAIRING_CODE
+        DeviceRole.GUARDIAN ->
+            if (pairingStatus == PairingStatus.PAIRED) Route.GUARDIAN_HOME else Route.CONNECT_SENIOR
+    }

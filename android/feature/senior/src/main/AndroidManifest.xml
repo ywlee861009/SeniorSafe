@@ -9,5 +9,9 @@
             android:name=".service.FallDetectionService"
             android:exported="false"
             android:foregroundServiceType="health" />
+
+        <receiver
+            android:name=".today.TodayMessageNotificationReceiver"
+            android:exported="false" />
     </application>
 </manifest>
