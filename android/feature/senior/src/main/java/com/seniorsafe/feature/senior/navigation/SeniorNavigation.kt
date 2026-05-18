@@ -22,8 +22,7 @@ fun NavGraphBuilder.seniorGraph(
 ) {
     composable(seniorHomeRoute) {
         SeniorHomeScreen(
-            onNavigateToPairingCode = onNavigateToPairingCode,
-            onNavigateToTodayMessage = onNavigateToTodayMessage
+            onNavigateToPairingCode = onNavigateToPairingCode
         )
     }
     composable(pairingCodeRoute) {

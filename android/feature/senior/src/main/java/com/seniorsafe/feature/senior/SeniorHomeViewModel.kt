@@ -9,11 +9,8 @@ import com.seniorsafe.core.activity.service.ActivityServiceStateStore
 import com.seniorsafe.core.datastore.DeviceDataStore
 import com.seniorsafe.core.model.PairingStatus
 import com.seniorsafe.feature.senior.today.TodayMessageNotificationScheduler
+import com.seniorsafe.feature.senior.today.TodayMessageProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -23,9 +20,8 @@ import javax.inject.Inject
 
 data class SeniorHomeUiState(
     val isServiceRunning: Boolean = false,
-    val lastUnlockText: String = "아직 기록이 없어요",
-    val todayUnlockCount: Int = 0,
-    val uploadStatusText: String = "서버 연결 전이라 휴대폰 안에만 저장 중이에요"
+    val message: String = "",
+    val recentEvents: List<UnlockEventEntity> = emptyList()
 )
 
 @HiltViewModel
@@ -34,27 +30,31 @@ class SeniorHomeViewModel @Inject constructor(
     activityServiceStateStore: ActivityServiceStateStore,
     activityRepository: ActivityRepository,
     private val deviceDataStore: DeviceDataStore,
-    todayMessageNotificationScheduler: TodayMessageNotificationScheduler
+    todayMessageNotificationScheduler: TodayMessageNotificationScheduler,
+    todayMessageProvider: TodayMessageProvider
 ) : ViewModel() {
+
+    private val todayMessage = todayMessageProvider.messageForToday()
 
     val uiState: StateFlow<SeniorHomeUiState> =
         combine(
             activityServiceStateStore.isRunning,
-            activityRepository.observeRecentUnlocks(100)
-        ) { isRunning, unlocks ->
+            activityRepository.observeRecentUnlocks(50)
+        ) { isRunning, events ->
             SeniorHomeUiState(
                 isServiceRunning = isRunning,
-                lastUnlockText = unlocks.firstOrNull()?.toDisplayTime() ?: "아직 기록이 없어요",
-                todayUnlockCount = unlocks.count { it.unlockedAtMillis >= startOfTodayMillis() }
+                message = todayMessage,
+                recentEvents = events
             )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = SeniorHomeUiState()
+            initialValue = SeniorHomeUiState(message = todayMessage)
         )
 
     init {
         todayMessageNotificationScheduler.scheduleDailyEveningReminder()
+        activityMonitorController.ensureServiceRunning("senior home opened")
     }
 
     fun startMonitoring() {
@@ -71,18 +71,4 @@ class SeniorHomeViewModel @Inject constructor(
             onComplete()
         }
     }
-}
-
-private fun UnlockEventEntity.toDisplayTime(): String {
-    val formatter = SimpleDateFormat("M월 d일 HH:mm", Locale.KOREA)
-    return formatter.format(Date(unlockedAtMillis))
-}
-
-private fun startOfTodayMillis(): Long {
-    val calendar = Calendar.getInstance()
-    calendar.set(Calendar.HOUR_OF_DAY, 0)
-    calendar.set(Calendar.MINUTE, 0)
-    calendar.set(Calendar.SECOND, 0)
-    calendar.set(Calendar.MILLISECOND, 0)
-    return calendar.timeInMillis
 }
