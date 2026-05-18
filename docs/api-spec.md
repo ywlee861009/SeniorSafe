@@ -12,7 +12,9 @@ MVP는 사용자 로그인 없이 동작한다. 보호가 필요한 엔드포인
 Authorization: Bearer <device_access_token>
 ```
 
-## Health
+> **구현 상태 표기**: ✅ 구현됨 / ⚠️ Planned — 백엔드와 Android 클라이언트 양쪽에 코드가 아직 없음. 페이로드·응답 예시는 향후 구현 시 사용할 설계 명세로 보존.
+
+## Health ✅ 구현됨
 
 `GET /health`
 
@@ -20,9 +22,9 @@ Authorization: Bearer <device_access_token>
 {"status":"ok"}
 ```
 
-## Devices
+## Devices ✅ 구현됨
 
-### Register Device
+### Register Device ✅ 구현됨 (Android 미연결 — device token 발급 호출 없음)
 
 `POST /devices/register`
 
@@ -54,7 +56,7 @@ Authorization: Bearer <device_access_token>
 - `install_id`는 Android 로컬 저장소에서 생성한다.
 - 앱 삭제/재설치로 `install_id`가 사라지면 새 기기로 등록한다.
 
-### Update FCM Token
+### Update FCM Token ✅ 구현됨 (Android 미연결)
 
 `PUT /devices/fcm-token`
 
@@ -70,7 +72,7 @@ Authorization: Bearer <device_access_token>
 {"message":"FCM token updated"}
 ```
 
-### Get Current Device
+### Get Current Device ✅ 구현됨 (Android 미연결)
 
 `GET /devices/me`
 
@@ -88,9 +90,9 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-## Pairing
+## Pairing ✅ 구현됨
 
-### Create Pairing Code
+### Create Pairing Code ✅ 구현됨 (Android는 현재 로컬 난수 사용 — 서버 미호출)
 
 `POST /pairing/codes`
 
@@ -112,7 +114,7 @@ Authorization: Bearer <device_access_token>
 - 코드는 10분 동안 유효하다.
 - 코드는 일회성이다.
 
-### Claim Pairing Code
+### Claim Pairing Code ✅ 구현됨
 
 `POST /pairings`
 
@@ -142,7 +144,7 @@ Authorization: Bearer <device_access_token>
 - 존재하지 않는 코드
 - 보호자가 아닌 기기의 요청
 
-### List Pairings
+### List Pairings ✅ 구현됨
 
 `GET /pairings`
 
@@ -181,7 +183,7 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-### Disconnect Pairing
+### Disconnect Pairing ✅ 구현됨
 
 `DELETE /pairings/{pairing_id}`
 
@@ -196,9 +198,9 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-## Activity
+## Activity ⚠️ Planned — 백엔드·Android 양쪽 미구현
 
-### Record Activity Event
+### Record Activity Event ⚠️ Planned
 
 `POST /activity/events`
 
@@ -232,7 +234,7 @@ Authorization: Bearer <device_access_token>
 - 네트워크 실패 후 Android가 재시도할 수 있다.
 - guardian 기기는 이 API를 호출할 수 없다.
 
-### List Activity Events
+### List Activity Events ⚠️ Planned
 
 `GET /activity/events/{senior_device_id}`
 
@@ -259,7 +261,7 @@ limit=50
 }
 ```
 
-### Record Service Event
+### Record Service Event ⚠️ Planned
 
 `POST /activity/service-events`
 
@@ -290,7 +292,7 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
 - MVP에서는 모든 서비스 이벤트를 저장하되, heartbeat는 저장량이 커질 수 있으므로 보존 기간 또는 샘플링 정책을 둔다.
 - `event_type` 후보: `started`, `stopped`, `heartbeat`, `boot_completed`, `unlock_upload_failed`, `error`.
 
-### List Service Events
+### List Service Events ⚠️ Planned
 
 `GET /activity/service-events/{device_id}`
 
@@ -312,9 +314,9 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
 }
 ```
 
-## Inactivity Alerts
+## Inactivity Alerts ⚠️ Planned — 백엔드·Android 양쪽 미구현
 
-### Run Inactivity Alert Batch
+### Run Inactivity Alert Batch ⚠️ Planned
 
 `POST /internal/batches/inactivity-alerts/run`
 
@@ -349,7 +351,7 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
 - FCM 실패도 `InactivityAlert` 로그에 남긴다.
 - 실제 운영에서는 HTTP API 대신 CLI/스케줄러로 실행해도 된다.
 
-### List Inactivity Alerts
+### List Inactivity Alerts ⚠️ Planned
 
 `GET /activity/inactivity-alerts/{senior_device_id}`
 

@@ -25,8 +25,8 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 ### 백엔드
 
 - User 기반 API(auth, fall, user-pairing) 전면 제거 완료. Device 토큰 인증 전용.
-- 남은 API: health, devices(register/me/fcm-token), pairing(codes), pairings(claim/list/disconnect)
-- 잠금해제 이벤트, 서비스 실행 내역, 미사용 알림 배치 API는 신규 구현 필요 (`todo/004`).
+- 현재 구현된 라우터: `GET /health`, `/devices/*`(register/me/fcm-token), `/pairing/codes`, `/pairings/*`(claim/list/disconnect).
+- 미구현: `/activity/*`(events/service-events/inactivity-alerts), `/internal/batches/*`. `ActivityEvent`/`ServiceEvent`/`InactivityAlert` 모델 파일도 없음. → `todo/004` 참고.
 - DB 마이그레이션(users/fall_events 테이블 drop, pairing User FK 칼럼 drop) 별도 필요.
 
 ### Android
@@ -34,10 +34,15 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 - 앱 진입점은 로컬 `DeviceDataStore` 기준 역할 선택/페어링 상태로 결정된다.
 - 새 설치 후 로그인 없이 `RoleSelectScreen`에서 어르신/보호자 역할을 선택한다.
 - 어르신 플로우는 서버 없이도 로컬 6자리 연결 코드 목업, 수동 페어링 완료, 어르신 홈 진입까지 동작한다.
-- 어르신 홈은 낙상 중심 UI가 아니라 보호자 연결 상태, 활동 모니터링 상태, 최근 잠금해제 시각, 오늘 사용 기록 수를 표시한다.
+  - 페어링 코드: `PairingCodeViewModel`이 `Random.nextInt(0, 1_000_000)` 로컬 난수 생성. 서버 등록 없음(mock).
+  - "보호자와 연결됐어요": `DeviceDataStore.savePairingStatus(PAIRED)` 로컬 토글만 수행. 보호자 응답 없이도 paired 처리.
+- 어르신 홈은 보호자 연결 상태, 활동 모니터링 상태, 최근 잠금해제 시각, 오늘 사용 기록 수를 표시한다.
 - 어르신 홈에서 활동 모니터링 서비스를 시작/중지할 수 있다.
 - 오늘의 글 화면과 매일 저녁 8시 로컬 알림 예약/탭 이동 구조가 추가됐다.
-- 낙상 감지 런타임은 `core:fall-detection` 모듈에 남아 있으나 MVP 제품 흐름에서는 숨김/보류 상태다.
+- 활동 이벤트(잠금해제·충전)는 로컬 Room에만 저장됨. `/activity/events` 백엔드 업로드 미구현. Room DAO에 `getPendingUpload`/`markUploaded`만 정의.
+- `core:fall-detection`은 dependency graph orphan — APK 미포함. `feature/senior/.service/FallDetectionService`도 호출 트리거 없음(둘 다 dead). 정리 대상: `todo/008`.
+- login/register Compose 화면 코드 잔존 — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않아 진입 불가.
+- device access token 발급/저장 미구현. `TokenDataStore`는 user JWT용 구조로 남아 있음. OkHttp Interceptor 없음.
 - MVP 디버깅 로그 저장은 `core:diagnostics` 모듈의 Room DB(`seniorsafe_diagnostics.db`)를 사용한다.
 - Android 빌드 검증: 2026-05-18 기준 `cd android && ./gradlew assembleDebug` 통과.
 

@@ -65,6 +65,8 @@ The implementation may run as one of:
 
 The batch must write `InactivityAlert` rows for sent and failed notifications so repeated alerts and FCM failures are auditable.
 
+현재 미사용 알림 배치는 미구현 상태이며, `ticket/todo/004-unlock-inactivity-notification-flow.md`에서 다룬다.
+
 ## Ports
 
 - `80`: public HTTP through Nginx

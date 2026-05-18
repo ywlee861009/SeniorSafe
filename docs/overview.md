@@ -4,7 +4,7 @@
 
 고령자의 휴대폰 사용 활동을 보호자가 확인할 수 있게 하는 모바일 안전망 시스템.
 
-현재 MVP는 낙상 감지 기능을 보류하고, 어르신 휴대폰에서 일정 기간 활동이 감지되지 않으면 보호자에게 푸시 알림을 보내는 흐름에 집중한다. Android 앱은 잠금해제, 충전기 연결/해제 등 활동 이벤트와 서비스 실행 내역을 로컬 DB에 기록하고, 백엔드는 마지막 활동 시각과 이벤트 로그를 저장한다.
+현재 MVP는 낙상 감지 기능을 보류하고, 어르신 휴대폰에서 일정 기간 활동이 감지되지 않으면 보호자에게 푸시 알림을 보내는 흐름에 집중한다. Android 앱은 잠금해제, 충전기 연결/해제 등 활동 이벤트와 서비스 실행 내역을 로컬 DB에 기록하고, 백엔드는 마지막 활동 시각과 이벤트 로그를 저장한다(업로드는 `ticket/todo/004`에서 신규 구현 예정).
 
 SeniorSafe MVP는 계정 로그인 없이 동작한다. 앱을 설치한 뒤 보호자 또는 어르신 모드를 선택하고, 어르신 앱에 표시되는 연결 코드를 보호자 앱에 입력해 바로 페어링한다.
 
@@ -118,51 +118,72 @@ Firebase FCM
 
 ## 핵심 기능
 
-### Android 현재 구현 메모
+### Android 현재 구현 메모 (2026-05-18 기준)
 
-2026-05-16 기준 Android 앱은 아직 최종 온보딩 플로우가 아니라 MVP 낙상 감지 대시보드로 바로 진입한다. 이 대시보드는 센서와 foreground service 검증을 위한 임시 화면이다.
+**구현됨:**
+- `RoleSelect → Pairing → Senior/Guardian Home` 진입 흐름
+- `ActivityMonitorService`: 잠금해제·충전 이벤트 감지 → `unlock_events` Room 저장
+- 서비스 다층 생존(foreground + WakeLock + START_STICKY + `onTaskRemoved` AlarmManager 재예약 + BootReceiver + 3분 stale 자동 복구)
+- 서비스 생존 상태 heartbeat → `ActivityServiceStateStore` (SharedPreferences `last_heartbeat_at`)
+- MVP 디버깅 대시보드 (`feature/mvp` — 개발자 진입용, 일반 startDestination 분기 없음)
+- 매일 20시 오늘의 글 로컬 알림 (`AlarmManager.setInexactRepeating`)
+- MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB(`seniorsafe_diagnostics.db`)에 저장
 
-새 MVP 방향에서는 기존 낙상 감지 런타임을 제품 핵심에서 내리고, 서비스 실행 진단 구조와 Room 기반 로그 저장 구조를 활동 모니터링에 재사용한다.
+**미구현:**
+- 활동 이벤트 백엔드 업로드 (`ApiService`에 `/activity/events` 없음, 호출자 없음)
+- 서비스 이벤트 백엔드 업로드 (`/activity/service-events` 미연결)
+- 미전송 이벤트 재전송 루프 (Room DAO에 `getPendingUpload`/`markUploaded` 정의만 있고 호출자 없음)
+- device 등록/device_access_token 발급 호출 (OkHttp Interceptor 없음, `TokenDataStore`는 user JWT용)
+- 실제 페어링 코드 서버 등록 (현재 `PairingCodeViewModel`이 로컬 `Random.nextInt` 난수 생성, 서버 등록 없음)
+- 페어링 완료 서버 확인 (`markPaired`는 로컬 `PairingStatus.PAIRED` 토글만 수행)
+- FCM 보호자 알림 수신 (`google-services.json` 미등록, `google-services` 플러그인 주석)
 
-- 낙상 감지 런타임은 `core:fall-detection` 모듈에 있으나 MVP 제품화는 보류한다.
-- MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB에 저장한다.
-- 화면을 종료해도 foreground service가 살아 있으면 서비스 상태 전이 로그가 계속 저장된다.
-- 서비스 실행 상태 표시는 저장된 boolean이 아니라 service heartbeat 기준으로 동기화한다.
-- root Compose에는 edge-to-edge status bar/navigation bar padding이 적용되어 있다.
-- 로그인 없는 역할 선택/기기 등록/페어링 온보딩은 아직 남은 작업이다.
-- 활동 이벤트 감지, 업로드, 미사용 알림 배치는 신규 작업이다.
+**기타:**
+- `core:fall-detection`은 dependency graph orphan — APK 미포함. `feature/senior/.service/FallDetectionService`도 호출 트리거 없음(둘 다 dead). 정리 대상: `ticket/todo/008`
+- login/register 화면 코드 잔존(dead route — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않음)
+- `BASE_URL = "http://10.0.2.2:8000/"` 하드코딩 (`core/network/NetworkModule.kt`)
 
 ### 어르신 앱
 
-- 역할 선택 후 어르신 기기로 등록
-- 보호자와 연결할 6자리 코드 생성
-- 활동 모니터링 Foreground Service 실행
+구현됨:
+- 역할 선택 → 어르신 홈 진입
+- 연결 코드 화면 (로컬 난수, mock)
+- 활동 모니터링 Foreground Service 실행 (서비스 생존 다층 방어)
 - 서비스 시작/중지/heartbeat/오류 내역을 로컬 DB에 기록
 - 활동 이벤트(잠금해제, 충전기 연결/해제)를 로컬 DB에 기록
-- 활동 이벤트를 백엔드에 업로드
-- 네트워크 실패 시 로컬 미전송 이벤트를 보관하고 재시도
-- 매일 저녁 8시 "오늘의 글" 로컬 푸시 발송
-- 오늘의 글 열람 내역을 로컬 DB에 기록
+- 매일 저녁 8시 "오늘의 글" 로컬 푸시 발송·열람 기록
+
+미구현:
+- 기기 등록 및 device access token 발급 호출
+- 실제 페어링 코드 서버 등록 (현재 mock)
+- 활동 이벤트 백엔드 업로드 및 재전송
 
 ### 보호자 앱
 
-- 역할 선택 후 보호자 기기로 등록
-- 어르신 앱의 연결 코드 입력
+구현됨:
+- 역할 선택 → 보호자 홈 진입
+- 연결 코드 입력 (`pairings` API 호출)
 - 연결된 어르신 목록 조회
-- 어르신별 마지막 활동 시각 조회
-- N일 미사용 FCM 알림 수신
 - 연결 해제
+
+미구현:
+- 기기 등록 및 device access token 발급 호출
+- 어르신별 마지막 활동 시각 조회 (백엔드 미구현)
+- N일 미사용 FCM 알림 수신 (`google-services.json` 미등록)
 
 ### 백엔드 API 및 배치
 
-- 기기 등록 및 device token 발급
-- FCM token 등록/갱신
-- 연결 코드 생성 및 사용
-- active pairing 조회/해제
-- 활동 이벤트 수신 (잠금해제, 충전 상태 변화 등)
-- 어르신 기기 마지막 활동 시각 저장
-- 서비스 실행 내역 수신 및 저장
-- 미사용 상태 일일 배치 실행
+구현됨:
+- 기기 등록 및 device token 발급 (`/devices/register`)
+- FCM token 등록/갱신 (`/devices/fcm-token`)
+- 내 기기 정보 조회 (`/devices/me`)
+- 연결 코드 생성 (`/pairing/codes`)
+- active pairing 연결/조회/해제 (`/pairings`)
+
+미구현:
+- 활동 이벤트 수신 (`/activity/events`)
+- 서비스 실행 내역 수신 (`/activity/service-events`)
+- 미사용 알림 배치 실행 (`/internal/batches/inactivity-alerts/run`)
 - 보호자 FCM 발송
 
 ---
@@ -195,7 +216,8 @@ Firebase FCM
  ├─ 활동 감지               │
  │  (잠금해제/충전 연결/해제) │
  ├─ 로컬 DB 기록            │
- ├─ POST /activity/events ──▶
+ ├─ Room unlock_events insert
+ ├─ [미구현] POST /activity/events ──▶
  │                         ├─ ActivityEvent 저장
  │                         └─ Device.last_activity_at 갱신
 ```

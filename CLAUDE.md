@@ -6,6 +6,8 @@ SeniorSafe는 Android 앱 1개(어르신/보호자 두 모드)와 FastAPI 백엔
 
 현재 MVP는 낙상 감지 제품화를 보류하고, 어르신 휴대폰의 활동 기록(잠금해제, 충전기 연결/해제 등)을 백엔드에 저장한 뒤 마지막 활동 후 2일이 지나면 보호자에게 FCM 푸시를 보내는 방향이다.
 
+**구현 현황**: 백엔드는 `/devices`와 `/pairing` 라우터만 구현됐고, 활동 이벤트 수신·미사용 알림 배치는 설계만 있다. Android도 활동 업로드 미연결 — 로컬 Room 기록까지만 구현됨.
+
 설계 문서: `docs/`, UI 설계: `design/`, API 명세: `docs/api-spec.md`, 티켓: `ticket/`
 
 ---
@@ -95,13 +97,23 @@ Android SDK: compileSdk 35, minSdk 26, targetSdk 35, JVM 17, Kotlin 2.0.21, Comp
 - `get_current_device`는 `core/security.py`에 정의한다.
 - 사용자 계정/JWT 로그인은 현재 MVP 범위가 아니다.
 
-### 라우터 prefix 기준
+> **Android 구현 현황**: device_access_token 발급/저장/주입 로직 미구현. 현재 `TokenDataStore`는 user JWT용이며, 각 Repository가 `tokenDataStore.getAccessToken()`을 호출 사이트별로 수동 주입한다. OkHttp Interceptor 없음. device token Interceptor 통일은 `ticket/todo/006` 참고.
+
+### 라우터 prefix 기준 / 구현 상태
+
+| 라우터 | 구현 상태 |
+|---|---|
+| `/devices` | ✅ 구현됨 (register, me, fcm-token) |
+| `/pairing` (codes) | ✅ 구현됨 |
+| `/pairings` (claim/list/disconnect) | ✅ 구현됨 |
+| `/activity` | ⚠️ 미구현 (planned) |
+| `/internal/batches` | ⚠️ 미구현 (planned) |
 
 ```python
 app.include_router(devices_router, prefix="/devices")
 app.include_router(pairing_router, prefix="/pairing")
 app.include_router(pairings_router, prefix="/pairings")
-app.include_router(activity_router, prefix="/activity")
+app.include_router(activity_router, prefix="/activity")  # 미구현
 ```
 
 배치 실행은 CLI, scheduler, 또는 보호된 internal endpoint 중 하나로 구현한다.
@@ -185,13 +197,13 @@ android/
 │   ├── diagnostics/
 │   └── ui/
 └── feature/
-    ├── login/      ← 현재 MVP 진입 흐름에서는 제거/비노출 대상
+    ├── login/      ← 코드 잔존(dead route). AppNavHost에 등록되어 있으나 MainActivity.toStartDestination이 분기하지 않음
     ├── senior/
     ├── guardian/
     └── mvp/
 ```
 
-낙상 감지 런타임은 `core:fall-detection`에 있으나 제품화는 보류한다. 서비스 생존/heartbeat/Room 로그 패턴은 활동 모니터링 서비스에서 재사용할 수 있다.
+낙상 감지 런타임은 `core:fall-detection`에 있으나 제품화는 보류한다 — `core:fall-detection`은 dependency graph orphan으로 APK에 미포함. `feature/senior/.service/FallDetectionService`에도 동일 이름의 별도 서비스가 있으나 호출 트리거 없음(둘 다 dead). 정리 대상은 `ticket/todo/008` 참고. 서비스 생존/heartbeat/Room 로그 패턴은 활동 모니터링 서비스에서 재사용했다.
 
 ### 의존성 방향
 
@@ -204,19 +216,19 @@ core/* → core/* (순환 금지)
 ### 현재 MVP Android 핵심 흐름
 
 ```text
-ACTION_USER_PRESENT
-  → 로컬 UnlockEvent 기록
-  → 백엔드 POST /activity/events 업로드
-  → 실패 시 미전송 이벤트로 보관
-  → 재시도 후 업로드 성공/실패 로그 기록
+ACTION_USER_PRESENT / POWER_CONNECTED / POWER_DISCONNECTED
+  → ActivityRepository.recordUnlock(now, source)
+  → Room unlock_events 테이블 insert (uploaded=false)
+  → [미구현] 백엔드 POST /activity/events 업로드 및 재전송
+  (Room DAO에 getPendingUpload/markUploaded 정의 있으나 호출자 없음)
 ```
 
 서비스 실행 내역:
 
 ```text
 ActivityMonitorService
-  → started / stopped / heartbeat / error 로컬 기록
-  → 백엔드 POST /activity/service-events 업로드
+  → started / stopped / heartbeat / error 로컬 기록 (Room service_events + DiagnosticsLogStore)
+  → [미구현] 백엔드 POST /activity/service-events 업로드
 ```
 
 ### 네이밍
