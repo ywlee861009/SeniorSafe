@@ -6,6 +6,7 @@ plugins {
 android { namespace = "com.seniorsafe.core.activity" }
 
 dependencies {
+    implementation(project(":core:util"))
     implementation(project(":core:diagnostics"))
 
     implementation(libs.androidx.core.ktx)

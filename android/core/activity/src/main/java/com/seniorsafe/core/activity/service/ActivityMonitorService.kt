@@ -17,6 +17,7 @@ import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import com.seniorsafe.core.activity.db.ActivityRepository
 import com.seniorsafe.core.diagnostics.DiagnosticsLogStore
+import com.seniorsafe.core.util.KeroLog
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -33,15 +34,17 @@ class ActivityMonitorService : Service() {
     companion object {
         const val CHANNEL_ID = "activity_monitor_channel"
         const val NOTIFICATION_ID = 3001
-        private const val HEARTBEAT_INTERVAL_MS = 60_000L // 1분 주기
+        private const val HEARTBEAT_INTERVAL_MS = 60_000L
 
         fun start(context: Context) {
+            KeroLog.d("ActivityMonitorService", "start() called — dispatching startForegroundService")
             context.startForegroundService(
                 Intent(context, ActivityMonitorService::class.java)
             )
         }
 
         fun stop(context: Context) {
+            KeroLog.d("ActivityMonitorService", "stop() called — dispatching stopService")
             context.stopService(
                 Intent(context, ActivityMonitorService::class.java)
             )
@@ -59,7 +62,10 @@ class ActivityMonitorService : Service() {
     private var powerReceiver: BroadcastReceiver? = null
 
     override fun onCreate() {
+        // KeroLog는 주입 없이 동작하므로 super.onCreate()(Hilt 주입) 전에 찍힌다
+        KeroLog.d("ActivityMonitorService", "onCreate — before Hilt injection")
         super.onCreate()
+        KeroLog.d("ActivityMonitorService", "onCreate — Hilt injection complete")
         log("onCreate")
         recordEvent("started", "activity monitor service created")
 
@@ -71,12 +77,18 @@ class ActivityMonitorService : Service() {
         log("partial wake lock acquired")
 
         createNotificationChannel()
-        startForeground(
-            NOTIFICATION_ID,
-            buildNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-        )
-        log("foreground service started")
+        try {
+            startForeground(
+                NOTIFICATION_ID,
+                buildNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+            log("startForeground OK")
+            KeroLog.d("ActivityMonitorService", "startForeground success — notification should be visible")
+        } catch (e: Exception) {
+            KeroLog.e("ActivityMonitorService", "startForeground FAILED", e)
+            log("startForeground FAILED: ${e.javaClass.simpleName}: ${e.message}")
+        }
 
         registerUnlockReceiver()
         registerPowerReceiver()
@@ -84,12 +96,14 @@ class ActivityMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        KeroLog.d("ActivityMonitorService", "onStartCommand flags=$flags startId=$startId")
         log("onStartCommand flags=$flags startId=$startId")
         serviceStateStore.recordHeartbeat("onStartCommand")
         return START_STICKY
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        KeroLog.w("ActivityMonitorService", "onTaskRemoved — scheduling AlarmManager restart in 1s")
         log("task removed; scheduling restart")
         recordEvent("task_removed", "scheduling alarm restart")
         val restartIntent = Intent(this, ActivityMonitorService::class.java).apply {
@@ -109,11 +123,13 @@ class ActivityMonitorService : Service() {
     }
 
     override fun onTrimMemory(level: Int) {
+        KeroLog.w("ActivityMonitorService", "onTrimMemory level=$level")
         log("onTrimMemory level=$level")
         super.onTrimMemory(level)
     }
 
     override fun onDestroy() {
+        KeroLog.d("ActivityMonitorService", "onDestroy")
         log("onDestroy")
         recordEvent("stopped", "activity monitor service destroyed")
         unregisterUnlockReceiver()
@@ -135,6 +151,7 @@ class ActivityMonitorService : Service() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == Intent.ACTION_USER_PRESENT) {
                     val now = System.currentTimeMillis()
+                    KeroLog.d("ActivityMonitorService", "ACTION_USER_PRESENT received")
                     log("ACTION_USER_PRESENT received")
                     serviceScope.launch {
                         activityRepository.recordUnlock(now)
@@ -161,11 +178,12 @@ class ActivityMonitorService : Service() {
         powerReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 val source = when (intent.action) {
-                    Intent.ACTION_POWER_CONNECTED -> "power_connected"
+                    Intent.ACTION_POWER_CONNECTED    -> "power_connected"
                     Intent.ACTION_POWER_DISCONNECTED -> "power_disconnected"
                     else -> return
                 }
                 val now = System.currentTimeMillis()
+                KeroLog.d("ActivityMonitorService", "$source received")
                 log("$source received")
                 serviceScope.launch {
                     activityRepository.recordUnlock(now, source)
