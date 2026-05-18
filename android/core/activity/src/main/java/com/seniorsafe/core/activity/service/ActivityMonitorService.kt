@@ -38,14 +38,14 @@ class ActivityMonitorService : Service() {
         private const val ACTION_REATTACH = "com.seniorsafe.REATTACH_NOTIFICATION"
 
         fun start(context: Context) {
-            KeroLog.d("ActivityMonitorService", "start() called — dispatching startForegroundService")
+            KeroLog.d("[ActivityMonitorService] start() called — dispatching startForegroundService")
             context.startForegroundService(
                 Intent(context, ActivityMonitorService::class.java)
             )
         }
 
         fun stop(context: Context) {
-            KeroLog.d("ActivityMonitorService", "stop() called — dispatching stopService")
+            KeroLog.d("[ActivityMonitorService] stop() called — dispatching stopService")
             context.stopService(
                 Intent(context, ActivityMonitorService::class.java)
             )
@@ -64,9 +64,9 @@ class ActivityMonitorService : Service() {
 
     override fun onCreate() {
         // KeroLog는 주입 없이 동작하므로 super.onCreate()(Hilt 주입) 전에 찍힌다
-        KeroLog.d("ActivityMonitorService", "onCreate — before Hilt injection")
+        KeroLog.d("[ActivityMonitorService] onCreate — before Hilt injection")
         super.onCreate()
-        KeroLog.d("ActivityMonitorService", "onCreate — Hilt injection complete")
+        KeroLog.d("[ActivityMonitorService] onCreate — Hilt injection complete")
         log("onCreate")
         recordEvent("started", "activity monitor service created")
 
@@ -85,9 +85,9 @@ class ActivityMonitorService : Service() {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
             )
             log("startForeground OK")
-            KeroLog.d("ActivityMonitorService", "startForeground success — notification should be visible")
+            KeroLog.d("[ActivityMonitorService] startForeground success — notification should be visible")
         } catch (e: Exception) {
-            KeroLog.e("ActivityMonitorService", "startForeground FAILED", e)
+            KeroLog.e("[ActivityMonitorService] startForeground FAILED", e)
             log("startForeground FAILED: ${e.javaClass.simpleName}: ${e.message}")
         }
 
@@ -97,11 +97,11 @@ class ActivityMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        KeroLog.d("ActivityMonitorService", "onStartCommand flags=$flags startId=$startId action=${intent?.action}")
+        KeroLog.d("[ActivityMonitorService] onStartCommand flags=$flags startId=$startId action=${intent?.action}")
         log("onStartCommand flags=$flags startId=$startId")
         serviceStateStore.recordHeartbeat("onStartCommand")
         if (intent?.action == ACTION_REATTACH) {
-            KeroLog.d("ActivityMonitorService", "notification dismissed — reattaching")
+            KeroLog.d("[ActivityMonitorService] notification dismissed — reattaching")
             log("notification dismissed — reattaching")
             startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         }
@@ -109,7 +109,7 @@ class ActivityMonitorService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        KeroLog.w("ActivityMonitorService", "onTaskRemoved — scheduling AlarmManager restart in 1s")
+        KeroLog.w("[ActivityMonitorService] onTaskRemoved — scheduling AlarmManager restart in 1s")
         log("task removed; scheduling restart")
         recordEvent("task_removed", "scheduling alarm restart")
         val restartIntent = Intent(this, ActivityMonitorService::class.java).apply {
@@ -129,13 +129,13 @@ class ActivityMonitorService : Service() {
     }
 
     override fun onTrimMemory(level: Int) {
-        KeroLog.w("ActivityMonitorService", "onTrimMemory level=$level")
+        KeroLog.w("[ActivityMonitorService] onTrimMemory level=$level")
         log("onTrimMemory level=$level")
         super.onTrimMemory(level)
     }
 
     override fun onDestroy() {
-        KeroLog.d("ActivityMonitorService", "onDestroy")
+        KeroLog.d("[ActivityMonitorService] onDestroy")
         log("onDestroy")
         recordEvent("stopped", "activity monitor service destroyed")
         unregisterUnlockReceiver()
@@ -157,7 +157,7 @@ class ActivityMonitorService : Service() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == Intent.ACTION_USER_PRESENT) {
                     val now = System.currentTimeMillis()
-                    KeroLog.d("ActivityMonitorService", "ACTION_USER_PRESENT received")
+                    KeroLog.d("[ActivityMonitorService] ACTION_USER_PRESENT received")
                     log("ACTION_USER_PRESENT received")
                     serviceScope.launch {
                         activityRepository.recordUnlock(now)
@@ -189,7 +189,7 @@ class ActivityMonitorService : Service() {
                     else -> return
                 }
                 val now = System.currentTimeMillis()
-                KeroLog.d("ActivityMonitorService", "$source received")
+                KeroLog.d("[ActivityMonitorService] $source received")
                 log("$source received")
                 serviceScope.launch {
                     activityRepository.recordUnlock(now, source)

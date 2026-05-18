@@ -14,12 +14,12 @@ class BootReceiver : BroadcastReceiver() {
     @Inject lateinit var activityMonitorController: ActivityMonitorController
 
     override fun onReceive(context: Context, intent: Intent) {
-        KeroLog.d("BootReceiver", "onReceive action=${intent.action}")
+        KeroLog.d("[BootReceiver] onReceive action=${intent.action}")
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            KeroLog.d("BootReceiver", "BOOT_COMPLETED → ensureServiceRunning")
+            KeroLog.d("[BootReceiver] BOOT_COMPLETED → ensureServiceRunning")
             activityMonitorController.ensureServiceRunning("boot completed")
         } else {
-            KeroLog.w("BootReceiver", "unexpected action=${intent.action}")
+            KeroLog.w("[BootReceiver] unexpected action=${intent.action}")
         }
     }
 }

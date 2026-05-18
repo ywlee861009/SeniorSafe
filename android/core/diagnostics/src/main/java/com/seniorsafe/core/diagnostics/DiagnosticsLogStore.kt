@@ -61,7 +61,7 @@ class DiagnosticsLogStore @Inject constructor(
             dao.insert(entry)
             dao.pruneToLatest(MAX_ENTRIES)
         }
-        KeroLog.d(source, message)
+        KeroLog.d("[$source] $message")
     }
 
     @Synchronized
@@ -78,6 +78,6 @@ class DiagnosticsLogStore @Inject constructor(
                 )
             )
         }
-        KeroLog.d("Diagnostics", "diagnostics database cleared")
+        KeroLog.d("[Diagnostics] diagnostics database cleared")
     }
 }

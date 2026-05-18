@@ -76,7 +76,7 @@ class ActivityMonitorController @Inject constructor(
             log("→ startForegroundService dispatched OK; reason=$reason")
         } catch (e: Exception) {
             log("→ startForegroundService FAILED; reason=$reason; ${e.javaClass.name}: ${e.message.orEmpty()}")
-            KeroLog.e("ActivityMonitorController", "startForegroundService FAILED reason=$reason", e)
+            KeroLog.e("[ActivityMonitorController] startForegroundService FAILED reason=$reason", e)
         }
     }
 
@@ -87,7 +87,7 @@ class ActivityMonitorController @Inject constructor(
             log("→ stopService dispatched OK; reason=$reason")
         } catch (e: Exception) {
             log("→ stopService FAILED; reason=$reason; ${e.javaClass.name}: ${e.message.orEmpty()}")
-            KeroLog.e("ActivityMonitorController", "stopService FAILED reason=$reason", e)
+            KeroLog.e("[ActivityMonitorController] stopService FAILED reason=$reason", e)
         }
     }
 
