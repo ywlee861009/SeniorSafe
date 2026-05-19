@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+## Source Documents
+
+This file is the Codex instruction file for the repository root. It mirrors the project-wide intent from `GEMINI.md` and adds repository-specific analysis for Codex work.
+
 ## Project Structure & Module Organization
 
 SeniorSafe is an Android senior safety app with a FastAPI backend. The current MVP defers fall detection and focuses on unlock activity monitoring: if a senior phone has no unlock record for N days, the backend sends a push notification to guardians.
@@ -10,6 +14,14 @@ SeniorSafe is an Android senior safety app with a FastAPI backend. The current M
 - `design/`: UI design files and design notes.
 - `ticket/`: completed and remaining work tickets.
 - `nginx/` and `docker-compose.yml`: local deployment stack.
+
+## Folder Analysis
+
+The repository is split into an Android client and a FastAPI backend. Treat API changes as contract-first work: update `docs/api-spec.md` before changing either side of the implementation.
+
+The Android app uses a multi-module structure with `app`, `core`, and `feature` layers. Keep app-wide navigation and application wiring in `android/app`, reusable model/network/data/UI concerns in `android/core`, and user-flow screens in `android/feature`.
+
+The backend uses thin FastAPI routers, service-layer business logic, SQLAlchemy async models, Alembic migrations, and pytest coverage. Do not bypass the service/model boundaries for request handling or persistence.
 
 ## Planning & Tickets
 
