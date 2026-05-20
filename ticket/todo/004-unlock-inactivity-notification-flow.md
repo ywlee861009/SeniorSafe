@@ -10,6 +10,8 @@ P0
 
 이 기능은 센서 알고리즘보다 기술 리스크가 낮고, 서비스 실행 내역과 잠금해제 내역을 DB에 남기면 실제 기기 동작을 검증하기 쉽다.
 
+2026-05-20 현재 문서 계약은 범용 활동 이벤트 API인 `POST /activity/events`를 기준으로 한다. Android 로컬 Room 테이블 이름은 `unlock_events`지만 실제로는 `user_present`, `power_connected`, `power_disconnected`를 모두 저장하므로, 서버 모델/API 명칭은 `ActivityEvent`와 `last_activity_at`으로 맞춘다.
+
 ## 선행 완료 사항
 
 - 백엔드는 Device 토큰 인증 전용으로 전환 완료.
@@ -24,12 +26,12 @@ P0
 ### 백엔드
 
 - Device 모델에 활동 상태 필드 추가:
-  - `last_unlocked_at`
+  - `last_activity_at`
   - `inactivity_threshold_days` 또는 전역 기본값 사용
-- 잠금해제 이벤트 모델 추가:
-  - `UnlockEvent`
+- 활동 이벤트 모델 추가:
+  - `ActivityEvent`
   - `senior_device_id`
-  - `unlocked_at`
+  - `occurred_at`
   - `received_at`
   - `source`
 - 서비스 실행 이벤트 모델 추가:
@@ -44,13 +46,13 @@ P0
   - `senior_device_id`
   - `guardian_device_id`
   - `threshold_days`
-  - `last_unlocked_at`
+  - `last_activity_at`
   - `sent_at`
   - `status`
   - `detail`
 - 활동 API 구현:
-  - `POST /activity/unlocks`
-  - `GET /activity/unlocks/{senior_device_id}`
+  - `POST /activity/events`
+  - `GET /activity/events/{senior_device_id}`
   - `POST /activity/service-events`
   - `GET /activity/service-events/{device_id}`
   - `GET /activity/inactivity-alerts/{senior_device_id}`
@@ -65,7 +67,7 @@ P0
 ### Android
 
 - 기존 `core:activity` 로컬 기록을 백엔드 API와 연결:
-  - 잠금해제 이벤트 백엔드 `POST /activity/unlocks` 업로드
+  - 잠금해제/충전 이벤트 백엔드 `POST /activity/events` 업로드
   - 서비스 이벤트 백엔드 `POST /activity/service-events` 업로드
   - 네트워크 실패 시 미전송 이벤트 보관 및 재시도
   - 업로드 성공 시 로컬 `uploaded` 상태 갱신
@@ -97,7 +99,7 @@ P0
 ## 완료 조건
 
 - 어르신 폰 잠금해제 시 로컬 DB와 백엔드 DB에 이벤트가 기록된다.
-- 백엔드는 어르신 기기의 `last_unlocked_at`을 갱신한다.
+- 백엔드는 어르신 기기의 `last_activity_at`을 갱신한다.
 - 서비스 시작/중지/heartbeat/error 내역이 로컬 DB와 백엔드 DB에서 확인된다.
 - 매일 저녁 8시 오늘의 글 로컬 푸시가 예약되고, 탭하면 오늘의 글 화면으로 이동한다.
 - 오늘의 글 발송/열람 내역이 로컬 DB에서 확인된다.

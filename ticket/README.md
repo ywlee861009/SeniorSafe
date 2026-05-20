@@ -1,6 +1,6 @@
 # SeniorSafe 티켓
 
-최종 점검일: 2026-05-18
+최종 점검일: 2026-05-20
 
 ## 기획 피벗
 
@@ -56,12 +56,12 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 ## Android 남은 핵심 작업
 
-- `todo/003`: 서버 기기 등록/실제 페어링 API 연동, 보호자 코드 입력 실패 상태, 기존 로그인 화면 접근 정리까지 포함한 통합 온보딩 완성.
-- `todo/004`: 잠금해제 이벤트/서비스 이벤트 백엔드 업로드, 미전송 재시도, 미사용 알림 배치, 보호자 FCM 발송.
+- `todo/003`: Android 네트워크/데이터 계층을 현재 백엔드 계약(`/devices/register`, `/pairing/codes`, `/pairings`)과 맞추고, device token 저장/인증 interceptor, 실제 페어링, 기존 로그인 화면 접근 정리까지 포함한 통합 온보딩 완성.
+- `todo/004`: 활동 이벤트(`/activity/events`)와 서비스 이벤트 백엔드 업로드, 미전송 재시도, 미사용 알림 배치, 보호자 FCM 발송.
 - `todo/005`: Firebase 런타임 설정, API base URL 환경 분리, FCM token 등록/갱신/권한 처리.
 - `todo/006`: 로그인 없는 기기 단위 인증, rate limit, pairing/device 권한 정책 구현.
-- `todo/007`: 보호자 화면을 device/pairing 기준 모니터링 화면으로 보강.
-- `todo/008`: 낙상 감지 보류 상태와 재개 조건 문서화/검증.
+- `todo/007`: 보호자 화면을 device/pairing 기준 모니터링 화면으로 보강하고, 피벗 전 `service_active`/`last_fall_at` UI 모델을 정리.
+- `todo/008`: 낙상 감지 보류 상태, dead/orphan 코드 처리 범위, 재개 조건 문서화/검증.
 - `todo/009`: local/dev/prod 배포 환경, HTTPS, batch 실행, 백업/복구 정리.
 - `todo/010`: Android/Backend CI 품질 게이트 추가.
 
