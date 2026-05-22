@@ -4226,6 +4226,240 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "NyzL7",
+      "x": 3040,
+      "y": 0,
+      "fill": "#F5F5F5",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 32,
+      "children": [
+        {
+          "type": "text",
+          "id": "VsOOA",
+          "fill": "#212121",
+          "content": "Android Adaptive Icon",
+          "fontFamily": "Inter",
+          "fontSize": 18,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "ay09i",
+          "gap": 40,
+          "children": [
+            {
+              "type": "frame",
+              "id": "k28Fq",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "q6AIZ",
+                  "fill": "#757575",
+                  "content": "Background",
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "oH00u",
+                  "clip": true,
+                  "width": 108,
+                  "height": 108,
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "rotation": 180,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "#062860",
+                        "position": 0
+                      },
+                      {
+                        "color": "#1A6FCC",
+                        "position": 1
+                      }
+                    ]
+                  },
+                  "cornerRadius": 24
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pUwkC",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "d4kY8",
+                  "fill": "#757575",
+                  "content": "Foreground",
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "tRqIh",
+                  "clip": true,
+                  "width": 108,
+                  "height": 108,
+                  "cornerRadius": 24,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "path",
+                      "id": "uRgyQ",
+                      "x": 0,
+                      "y": 0,
+                      "geometry": "M54 12l-36 15 0 31q0 24 36 39 36-15 36-39l0-31z",
+                      "viewBox": [
+                        0,
+                        0,
+                        108,
+                        108
+                      ],
+                      "fill": "#FFFFFF",
+                      "width": 108,
+                      "height": 108,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "#00000033",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        },
+                        "blur": 16
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "id": "WkMvq",
+                      "x": 0,
+                      "y": 0,
+                      "geometry": "M54 73c-26-12-32-29-32-33 0-7 5-11 12-11 6 0 13 4 20 12 7-8 14-12 20-12 7 0 12 4 12 11 0 4-6 21-32 33z",
+                      "viewBox": [
+                        0,
+                        0,
+                        108,
+                        108
+                      ],
+                      "fill": "#F44336",
+                      "width": 108,
+                      "height": 108
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "l9EnJ",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "type": "text",
+              "id": "MO4lf",
+              "fill": "#757575",
+              "content": "Preview (Circular Crop)",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "E31ruP",
+              "clip": true,
+              "width": 108,
+              "height": 108,
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 180,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#0D47A1",
+                    "position": 0
+                  },
+                  {
+                    "color": "#1976D2",
+                    "position": 1
+                  }
+                ]
+              },
+              "cornerRadius": 54,
+              "layout": "none",
+              "children": [
+                {
+                  "type": "path",
+                  "id": "pf1dS",
+                  "x": 0,
+                  "y": 0,
+                  "geometry": "M54 12l-36 15 0 31q0 24 36 39 36-15 36-39l0-31z",
+                  "viewBox": [
+                    0,
+                    0,
+                    108,
+                    108
+                  ],
+                  "fill": "#FFFFFF",
+                  "width": 108,
+                  "height": 108,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#00000033",
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    },
+                    "blur": 16
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "Ovw6p",
+                  "x": 0,
+                  "y": 0,
+                  "geometry": "M54 73c-26-12-32-29-32-33 0-7 5-11 12-11 6 0 13 4 20 12 7-8 14-12 20-12 7 0 12 4 12 11 0 4-6 21-32 33z",
+                  "viewBox": [
+                    0,
+                    0,
+                    108,
+                    108
+                  ],
+                  "fill": "#F44336",
+                  "width": 108,
+                  "height": 108
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
