@@ -19,10 +19,21 @@ class TokenDataStore @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        private val KEY_TOKEN     = stringPreferencesKey("access_token")
+        private val KEY_TOKEN     = stringPreferencesKey("device_access_token")
+        private val KEY_DEVICE_ID = stringPreferencesKey("device_id")
         private val KEY_USER_TYPE = stringPreferencesKey("user_type")
         private val KEY_USER_NAME = stringPreferencesKey("user_name")
         private val KEY_USER_ID   = stringPreferencesKey("user_id")
+    }
+
+    suspend fun saveDeviceAuth(token: String, deviceId: String, role: String, displayName: String) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_TOKEN] = token
+            prefs[KEY_DEVICE_ID] = deviceId
+            prefs[KEY_USER_TYPE] = role
+            prefs[KEY_USER_NAME] = displayName
+            prefs[KEY_USER_ID] = deviceId
+        }
     }
 
     suspend fun saveAuth(token: String, userType: String, name: String, userId: String) {
@@ -36,6 +47,11 @@ class TokenDataStore @Inject constructor(
 
     suspend fun getAccessToken(): String? =
         context.dataStore.data.map { it[KEY_TOKEN] }.first()
+
+    suspend fun getDeviceAccessToken(): String? = getAccessToken()
+
+    suspend fun getDeviceId(): String? =
+        context.dataStore.data.map { it[KEY_DEVICE_ID] }.first()
 
     suspend fun getUserType(): String? =
         context.dataStore.data.map { it[KEY_USER_TYPE] }.first()

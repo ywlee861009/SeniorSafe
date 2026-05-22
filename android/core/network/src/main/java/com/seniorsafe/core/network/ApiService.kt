@@ -4,46 +4,47 @@ import com.seniorsafe.core.model.*
 import retrofit2.http.*
 
 interface ApiService {
+    @GET("health")
+    suspend fun health(): HealthResponse
 
-    @POST("auth/register")
-    suspend fun register(@Body request: RegisterRequest): AuthResponse
+    @POST("devices/register")
+    suspend fun registerDevice(@Body request: DeviceRegisterRequest): DeviceRegisterResponse
 
-    @POST("auth/login")
-    suspend fun login(@Body request: LoginRequest): AuthResponse
+    @GET("devices/me")
+    suspend fun getCurrentDevice(): DeviceMeResponse
 
-    @GET("pairing/code")
-    suspend fun getPairingCode(@Header("Authorization") token: String): PairingCodeResponse
+    @PUT("devices/fcm-token")
+    suspend fun updateFcmToken(@Body request: FcmTokenRequest): MessageResponse
 
-    @POST("pairing/connect")
-    suspend fun connectSenior(
-        @Header("Authorization") token: String,
-        @Body request: ConnectRequest
-    ): ConnectResponse
+    @POST("pairing/codes")
+    suspend fun createPairingCode(): PairingCodeResponse
 
-    @GET("pairing/list")
-    suspend fun getPairingList(@Header("Authorization") token: String): PairingListResponse
+    @POST("pairings")
+    suspend fun claimPairingCode(@Body request: ClaimPairingRequest): ClaimPairingResponse
 
-    @POST("fall/event")
-    suspend fun reportFallEvent(
-        @Header("Authorization") token: String,
-        @Body request: FallEventRequest
-    ): FallEventResponse
+    @GET("pairings")
+    suspend fun getPairingList(): PairingListResponse
 
-    @POST("fall/cancel")
-    suspend fun cancelFallEvent(
-        @Header("Authorization") token: String,
-        @Body request: FallCancelRequest
-    ): FallEventResponse
+    @DELETE("pairings/{pairingId}")
+    suspend fun disconnectPairing(@Path("pairingId") pairingId: String): DisconnectPairingResponse
 
-    @GET("fall/history/{seniorId}")
-    suspend fun getFallHistory(
-        @Header("Authorization") token: String,
-        @Path("seniorId") seniorId: String
-    ): FallHistoryResponse
+    @POST("activity/events")
+    suspend fun recordActivityEvent(@Body request: ActivityEventRequest): ActivityEventResponse
 
-    @PUT("devices/token")
-    suspend fun updateFcmToken(
-        @Header("Authorization") token: String,
-        @Body request: FcmTokenRequest
-    ): MessageResponse
+    @GET("activity/events/{seniorDeviceId}")
+    suspend fun getActivityEvents(
+        @Path("seniorDeviceId") seniorDeviceId: String,
+        @Query("limit") limit: Int = 50
+    ): ActivityEventsResponse
+
+    @POST("activity/service-events")
+    suspend fun recordServiceEvent(@Body request: ServiceEventRequest): ServiceEventResponse
+
+    @GET("activity/service-events/{deviceId}")
+    suspend fun getServiceEvents(@Path("deviceId") deviceId: String): ServiceEventsResponse
+
+    @GET("activity/inactivity-alerts/{seniorDeviceId}")
+    suspend fun getInactivityAlerts(
+        @Path("seniorDeviceId") seniorDeviceId: String
+    ): InactivityAlertsResponse
 }

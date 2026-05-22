@@ -11,9 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -22,15 +19,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
-import com.seniorsafe.core.datastore.DeviceDataStore
+import com.seniorsafe.core.data.repository.DeviceRepository
 import com.seniorsafe.core.model.DeviceRole
 import com.seniorsafe.core.ui.component.SeniorOutlinedButton
 import com.seniorsafe.core.ui.component.SeniorPrimaryButton
 import com.seniorsafe.core.ui.theme.Neutral600
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+
+data class RoleSelectUiState(
+    val isSaving: Boolean = false,
+    val error: String? = null
+)
 
 @Composable
 fun RoleSelectScreen(
@@ -38,7 +43,7 @@ fun RoleSelectScreen(
     onGuardianSelected: () -> Unit,
     viewModel: RoleSelectViewModel = hiltViewModel()
 ) {
-    var isSaving by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -64,9 +69,8 @@ fun RoleSelectScreen(
         Spacer(modifier = Modifier.height(48.dp))
         SeniorPrimaryButton(
             text = "어르신이에요",
-            enabled = !isSaving,
+            enabled = !uiState.isSaving,
             onClick = {
-                isSaving = true
                 viewModel.selectRole(DeviceRole.SENIOR, onSeniorSelected)
             }
         )
@@ -74,23 +78,36 @@ fun RoleSelectScreen(
         SeniorOutlinedButton(
             text = "보호자예요",
             onClick = {
-                if (!isSaving) {
-                    isSaving = true
-                    viewModel.selectRole(DeviceRole.GUARDIAN, onGuardianSelected)
-                }
+                viewModel.selectRole(DeviceRole.GUARDIAN, onGuardianSelected)
             }
         )
+        uiState.error?.let {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
 @HiltViewModel
 class RoleSelectViewModel @Inject constructor(
-    private val deviceDataStore: DeviceDataStore
+    private val deviceRepository: DeviceRepository
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(RoleSelectUiState())
+    val uiState: StateFlow<RoleSelectUiState> = _uiState
+
     fun selectRole(role: DeviceRole, onComplete: () -> Unit) {
         viewModelScope.launch {
-            deviceDataStore.saveRole(role)
-            onComplete()
+            _uiState.value = RoleSelectUiState(isSaving = true)
+            try {
+                deviceRepository.registerCurrentDevice(role)
+                onComplete()
+            } catch (e: Exception) {
+                _uiState.value = RoleSelectUiState(error = "기기 등록에 실패했어요. 서버 연결을 확인해주세요.")
+            }
         }
     }
 }

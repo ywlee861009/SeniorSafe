@@ -101,14 +101,14 @@ private fun SeniorCard(item: PairingItem, onClick: () -> Unit) {
                     }
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text     = if (item.serviceActive) "보호 중" else "서비스 꺼짐",
+                        text     = if (item.active) "연결됨" else "연결 해제됨",
                         fontSize = 14.sp,
                         color    = Neutral600
                     )
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text     = if (item.lastFallAt != null) "마지막 낙상: ${item.lastFallAt}" else "마지막 낙상: 없음",
+                    text     = if (item.lastActivityAt != null) "마지막 사용 기록: ${item.lastActivityAt}" else "마지막 사용 기록: 없음",
                     fontSize = 12.sp,
                     color    = Neutral400
                 )

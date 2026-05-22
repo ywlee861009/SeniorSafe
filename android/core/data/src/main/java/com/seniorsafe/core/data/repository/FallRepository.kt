@@ -1,6 +1,5 @@
 package com.seniorsafe.core.data.repository
 
-import com.seniorsafe.core.datastore.TokenDataStore
 import com.seniorsafe.core.model.*
 import com.seniorsafe.core.network.ApiService
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,8 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class FallRepository @Inject constructor(
-    private val api: ApiService,
-    private val tokenDataStore: TokenDataStore
+    @Suppress("unused") private val api: ApiService
 ) {
     // Service → NavHost 이벤트 버스
     private val _fallDetectedEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -21,11 +19,11 @@ class FallRepository @Inject constructor(
     fun publishFallDetected() { _fallDetectedEvent.tryEmit(Unit) }
 
     suspend fun reportFall(detectedAt: String): FallEventResponse =
-        api.reportFallEvent("Bearer ${tokenDataStore.getAccessToken()}", FallEventRequest(detectedAt))
+        error("낙상 API는 현재 MVP에서 보류되었습니다.")
 
-    suspend fun cancelFall(eventId: String) =
-        api.cancelFallEvent("Bearer ${tokenDataStore.getAccessToken()}", FallCancelRequest(eventId))
+    suspend fun cancelFall(eventId: String): Unit =
+        error("낙상 API는 현재 MVP에서 보류되었습니다.")
 
     suspend fun getFallHistory(seniorId: String): List<FallHistoryItem> =
-        api.getFallHistory("Bearer ${tokenDataStore.getAccessToken()}", seniorId).events
+        emptyList()
 }

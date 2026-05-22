@@ -1,10 +1,13 @@
 package com.seniorsafe.core.network.di
 
+import com.seniorsafe.core.datastore.TokenDataStore
+import com.seniorsafe.core.network.BuildConfig
 import com.seniorsafe.core.network.ApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -15,14 +18,21 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
-    // 에뮬레이터: 10.0.2.2  |  실기기: 서버 IP 또는 도메인으로 교체
-    private const val BASE_URL = "http://10.0.2.2:8000/"
-
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient =
+    fun provideOkHttpClient(tokenDataStore: TokenDataStore): OkHttpClient =
         OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val token = runBlocking { tokenDataStore.getDeviceAccessToken() }
+                val request = if (token.isNullOrBlank()) {
+                    chain.request()
+                } else {
+                    chain.request().newBuilder()
+                        .header("Authorization", "Bearer $token")
+                        .build()
+                }
+                chain.proceed(request)
+            }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BODY
@@ -36,7 +46,7 @@ object NetworkModule {
     @Singleton
     fun provideApiService(client: OkHttpClient): ApiService =
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.SENIORSAFE_API_BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

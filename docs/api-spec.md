@@ -24,7 +24,7 @@ Authorization: Bearer <device_access_token>
 
 ## Devices ✅ 구현됨
 
-### Register Device ✅ 구현됨 (Android 미연결 — device token 발급 호출 없음)
+### Register Device ✅ 구현됨
 
 `POST /devices/register`
 
@@ -56,7 +56,7 @@ Authorization: Bearer <device_access_token>
 - `install_id`는 Android 로컬 저장소에서 생성한다.
 - 앱 삭제/재설치로 `install_id`가 사라지면 새 기기로 등록한다.
 
-### Update FCM Token ✅ 구현됨 (Android 미연결)
+### Update FCM Token ✅ 구현됨
 
 `PUT /devices/fcm-token`
 
@@ -72,7 +72,7 @@ Authorization: Bearer <device_access_token>
 {"message":"FCM token updated"}
 ```
 
-### Get Current Device ✅ 구현됨 (Android 미연결)
+### Get Current Device ✅ 구현됨
 
 `GET /devices/me`
 
@@ -92,7 +92,7 @@ Authorization: Bearer <device_access_token>
 
 ## Pairing ✅ 구현됨
 
-### Create Pairing Code ✅ 구현됨 (Android는 현재 로컬 난수 사용 — 서버 미호출)
+### Create Pairing Code ✅ 구현됨
 
 `POST /pairing/codes`
 

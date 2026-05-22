@@ -26,8 +26,8 @@ fun PairingCodeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var timerSec by remember { mutableIntStateOf(600) }
 
-    LaunchedEffect(uiState.code) {
-        timerSec = 600
+    LaunchedEffect(uiState.code, uiState.expiresInSeconds) {
+        timerSec = uiState.expiresInSeconds
         while (timerSec > 0) {
             kotlinx.coroutines.delay(1000L)
             timerSec--
@@ -63,7 +63,7 @@ fun PairingCodeScreen(
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(
-                text = uiState.code.ifEmpty { "------" },
+            text = uiState.code.ifEmpty { "------" },
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = Neutral900,
@@ -77,7 +77,7 @@ fun PairingCodeScreen(
         val min = timerSec / 60
         val sec = timerSec % 60
         Text(
-            text = "10분 동안 사용할 수 있어요  %02d:%02d".format(min, sec),
+            text = "남은 시간  %02d:%02d".format(min, sec),
             fontSize = 18.sp,
             color = Neutral600,
             textAlign = TextAlign.Center
@@ -86,9 +86,13 @@ fun PairingCodeScreen(
         SeniorOutlinedButton(text = "새 코드 받기", onClick = { viewModel.loadCode() })
         Spacer(Modifier.height(16.dp))
         SeniorPrimaryButton(
-            text = "보호자와 연결됐어요",
-            enabled = !uiState.isSaving,
+            text = "연결 확인하기",
+            enabled = !uiState.isSaving && !uiState.isLoading,
             onClick = { viewModel.markPaired(onPairingComplete) }
         )
+        uiState.error?.let {
+            Spacer(Modifier.height(12.dp))
+            Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+        }
     }
 }
