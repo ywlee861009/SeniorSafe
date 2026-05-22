@@ -112,14 +112,13 @@ data class TodayMessageUiState(
 @HiltViewModel
 class TodayMessageViewModel @Inject constructor(
     private val activityRepository: ActivityRepository,
-    todayMessageProvider: TodayMessageProvider,
+    private val todayMessageProvider: TodayMessageProvider,
     todayMessageNotificationScheduler: TodayMessageNotificationScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         TodayMessageUiState(
-            dateText = SimpleDateFormat("M월 d일", Locale.KOREA).format(Date()),
-            message = todayMessageProvider.messageForToday()
+            dateText = SimpleDateFormat("M월 d일", Locale.KOREA).format(Date())
         )
     )
     val uiState: StateFlow<TodayMessageUiState> = _uiState
@@ -127,6 +126,8 @@ class TodayMessageViewModel @Inject constructor(
     init {
         todayMessageNotificationScheduler.scheduleDailyEveningReminder()
         viewModelScope.launch {
+            val message = todayMessageProvider.messageForToday()
+            _uiState.value = _uiState.value.copy(message = message)
             activityRepository.recordServiceEvent(
                 eventType = "today_message_opened",
                 detail = _uiState.value.dateText

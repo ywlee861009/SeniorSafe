@@ -11,6 +11,7 @@ import com.seniorsafe.core.model.PairingStatus
 import com.seniorsafe.feature.senior.today.TodayMessageNotificationScheduler
 import com.seniorsafe.feature.senior.today.TodayMessageProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -31,30 +32,34 @@ class SeniorHomeViewModel @Inject constructor(
     activityRepository: ActivityRepository,
     private val deviceDataStore: DeviceDataStore,
     todayMessageNotificationScheduler: TodayMessageNotificationScheduler,
-    todayMessageProvider: TodayMessageProvider
+    private val todayMessageProvider: TodayMessageProvider
 ) : ViewModel() {
 
-    private val todayMessage = todayMessageProvider.messageForToday()
+    private val todayMessage = MutableStateFlow("")
 
     val uiState: StateFlow<SeniorHomeUiState> =
         combine(
             activityServiceStateStore.isRunning,
-            activityRepository.observeRecentUnlocks(50)
-        ) { isRunning, events ->
+            activityRepository.observeRecentUnlocks(50),
+            todayMessage
+        ) { isRunning, events, message ->
             SeniorHomeUiState(
                 isServiceRunning = isRunning,
-                message = todayMessage,
+                message = message,
                 recentEvents = events
             )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = SeniorHomeUiState(message = todayMessage)
+            initialValue = SeniorHomeUiState()
         )
 
     init {
         todayMessageNotificationScheduler.scheduleDailyEveningReminder()
         activityMonitorController.ensureServiceRunning("senior home opened")
+        viewModelScope.launch {
+            todayMessage.value = todayMessageProvider.messageForToday()
+        }
     }
 
     fun startMonitoring() {
