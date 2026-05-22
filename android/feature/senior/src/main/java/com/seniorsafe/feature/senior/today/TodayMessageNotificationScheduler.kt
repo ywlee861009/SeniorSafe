@@ -15,12 +15,17 @@ class TodayMessageNotificationScheduler @Inject constructor(
 ) {
     fun scheduleDailyEveningReminder() {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
+        val triggerAt = nextEightPmMillis()
         alarmManager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
-            nextEightPmMillis(),
+            triggerAt,
             AlarmManager.INTERVAL_DAY,
             reminderPendingIntent()
         )
+        // 오늘 20시가 이미 지났으면 즉시 노티를 한 번 발송
+        if (triggerAt > todayEightPmMillis()) {
+            reminderPendingIntent().send()
+        }
     }
 
     private fun reminderPendingIntent(): PendingIntent =
@@ -31,17 +36,18 @@ class TodayMessageNotificationScheduler @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-    private fun nextEightPmMillis(): Long {
-        val calendar = Calendar.getInstance().apply {
+    private fun todayEightPmMillis(): Long =
+        Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 20)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-        }
-        if (calendar.timeInMillis <= System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-        return calendar.timeInMillis
+        }.timeInMillis
+
+    private fun nextEightPmMillis(): Long {
+        val today = todayEightPmMillis()
+        return if (today > System.currentTimeMillis()) today
+        else today + AlarmManager.INTERVAL_DAY
     }
 
     companion object {
