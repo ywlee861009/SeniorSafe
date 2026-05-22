@@ -16,11 +16,9 @@ object Route {
     const val REGISTER     = "register"
     const val SENIOR_HOME  = "senior_home"
     const val PAIRING_CODE = "pairing_code"
-    const val FALL_ALERT   = "fall_alert"
     const val TODAY_MESSAGE = "today_message"
     const val GUARDIAN_HOME    = "guardian_home"
     const val CONNECT_SENIOR   = "connect_senior"
-    const val FALL_HISTORY     = "fall_history/{seniorId}/{seniorName}"
     const val MVP_DASHBOARD    = "mvp_dashboard"
 }
 
@@ -59,16 +57,11 @@ fun AppNavHost(
                     popUpTo(Route.PAIRING_CODE) { inclusive = true }
                 }
             },
-            onFallDetected          = { navController.navigate(Route.FALL_ALERT) },
-            onFallAlertDismiss      = { navController.popBackStack() },
             onTodayMessageBack      = { navController.popBackStack() }
         )
 
         guardianGraph(
             onNavigateToConnect     = { navController.navigate(Route.CONNECT_SENIOR) },
-            onNavigateToFallHistory = { id, name ->
-                navController.navigate("fall_history/$id/$name")
-            },
             onConnectSuccess        = { navController.popBackStack() }
         )
 

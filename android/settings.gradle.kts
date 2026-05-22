@@ -27,7 +27,6 @@ include(":core:data")
 include(":core:diagnostics")
 include(":core:util")
 include(":core:activity")
-include(":core:fall-detection")
 include(":core:ui")
 
 // Feature

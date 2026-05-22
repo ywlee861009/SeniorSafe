@@ -4,7 +4,7 @@ This file is the Codex instruction file for `android/`. It mirrors `android/GEMI
 
 ## Folder Analysis
 
-`android/` is the Kotlin multi-module client. The included modules are `:app`, `:core:model`, `:core:network`, `:core:datastore`, `:core:data`, `:core:diagnostics`, `:core:util`, `:core:activity`, `:core:fall-detection`, `:core:ui`, `:feature:login`, `:feature:senior`, `:feature:guardian`, and `:feature:mvp`.
+`android/` is the Kotlin multi-module client. The included modules are `:app`, `:core:model`, `:core:network`, `:core:datastore`, `:core:data`, `:core:diagnostics`, `:core:util`, `:core:activity`, `:core:ui`, `:feature:login`, `:feature:senior`, `:feature:guardian`, and `:feature:mvp`.
 
 `app` owns the Android entry point, Hilt application setup, top-level navigation, and application resources. `core:*` modules own reusable concerns and must stay independent from specific user flows. `feature:*` modules own screens, view models, and per-flow navigation hooks.
 

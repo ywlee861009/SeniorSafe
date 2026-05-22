@@ -73,7 +73,6 @@ data class PairingItem(
     @SerializedName("last_seen_at") val lastSeenAt: String? = null,
     @SerializedName("last_activity_at") val lastActivityAt: String? = null,
     @SerializedName("inactivity_threshold_days") val inactivityThresholdDays: Int? = null,
-    @SerializedName("last_fall_at") val lastFallAt: String? = null
 ) {
     val seniorId: String get() = seniorDeviceId.orEmpty()
     val seniorName: String get() = seniorDisplayName ?: guardianDisplayName ?: "연결된 기기"
@@ -137,19 +136,6 @@ data class InactivityAlertItem(
 )
 
 data class InactivityAlertsResponse(val alerts: List<InactivityAlertItem>)
-
-// ─── Deferred Fall Compatibility ─────────────────────────────────────────────
-
-data class FallEventResponse(
-    @SerializedName("event_id") val eventId: String,
-    val status: String
-)
-
-data class FallHistoryItem(
-    val id: String,
-    @SerializedName("detected_at") val detectedAt: String,
-    val cancelled: Boolean
-)
 
 // ─── Local Device MVP ────────────────────────────────────────────────────────
 

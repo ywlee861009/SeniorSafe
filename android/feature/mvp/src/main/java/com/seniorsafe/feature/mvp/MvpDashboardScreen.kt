@@ -49,7 +49,6 @@ import com.seniorsafe.core.ui.theme.Success500
 
 @Composable
 fun MvpDashboardScreen(
-    onFallDetected: () -> Unit = {},
     viewModel: MvpDashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

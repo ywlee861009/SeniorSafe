@@ -12,8 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.seniorsafe.core.ui.theme.Danger500
-import com.seniorsafe.core.ui.theme.Neutral000
 
 /** 어르신용 대형 기본 버튼 (height 72dp) */
 @Composable
@@ -48,26 +46,6 @@ fun SeniorOutlinedButton(
             .height(72.dp)
     ) {
         Text(text = text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-/** 낙상 취소 전용 버튼 (흰 배경 + 빨간 텍스트) */
-@Composable
-fun FallCancelButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        colors  = ButtonDefaults.buttonColors(
-            containerColor = Neutral000,
-            contentColor   = Danger500
-        ),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(80.dp)
-    ) {
-        Text(text = "✋  괜찮아요 (취소)", fontSize = 22.sp, fontWeight = FontWeight.Bold)
     }
 }
 

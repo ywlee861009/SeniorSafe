@@ -25,7 +25,6 @@ import com.seniorsafe.core.ui.theme.Success500
 @Composable
 fun GuardianHomeScreen(
     onNavigateToConnect: () -> Unit,
-    onNavigateToFallHistory: (seniorId: String, seniorName: String) -> Unit,
     viewModel: GuardianHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,10 +50,7 @@ fun GuardianHomeScreen(
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
             items(uiState.pairings) { item ->
-                SeniorCard(
-                    item    = item,
-                    onClick = { onNavigateToFallHistory(item.seniorId, item.seniorName) }
-                )
+                SeniorCard(item = item)
             }
             if (uiState.pairings.isEmpty() && !uiState.isLoading) {
                 item {
@@ -68,9 +64,8 @@ fun GuardianHomeScreen(
 }
 
 @Composable
-private fun SeniorCard(item: PairingItem, onClick: () -> Unit) {
+private fun SeniorCard(item: PairingItem) {
     Card(
-        onClick   = onClick,
         modifier  = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
