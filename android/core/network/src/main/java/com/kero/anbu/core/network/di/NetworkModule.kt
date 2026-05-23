@@ -1,8 +1,8 @@
 package com.kero.anbu.core.network.di
 
 import com.kero.anbu.core.datastore.TokenDataStore
-import com.kero.anbu.core.network.BuildConfig
 import com.kero.anbu.core.network.ApiService
+import com.kero.anbu.core.network.FakeApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,8 +10,6 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -44,11 +42,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideApiService(client: OkHttpClient): ApiService =
-        Retrofit.Builder()
-            .baseUrl(BuildConfig.ANBU_API_BASE_URL)
-            .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
+    fun provideApiService(fakeApiService: FakeApiService): ApiService =
+        fakeApiService
 }
