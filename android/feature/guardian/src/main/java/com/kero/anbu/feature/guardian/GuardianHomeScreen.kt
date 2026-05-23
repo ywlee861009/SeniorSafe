@@ -1,5 +1,7 @@
 package com.kero.anbu.feature.guardian
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +31,18 @@ fun GuardianHomeScreen(
     viewModel: GuardianHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var backPressedTime by remember { mutableLongStateOf(0L) }
+
+    BackHandler {
+        val now = System.currentTimeMillis()
+        if (now - backPressedTime < 2000) {
+            (context as? android.app.Activity)?.finish()
+        } else {
+            backPressedTime = now
+            Toast.makeText(context, "한 번 더 누르면 종료됩니다", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         topBar = {

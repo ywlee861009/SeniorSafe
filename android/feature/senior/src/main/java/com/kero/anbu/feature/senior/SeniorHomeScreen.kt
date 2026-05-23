@@ -2,6 +2,8 @@ package com.kero.anbu.feature.senior
 
 import android.Manifest
 import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +39,18 @@ fun SeniorHomeScreen(
     viewModel: SeniorHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var backPressedTime by remember { mutableLongStateOf(0L) }
+
+    BackHandler {
+        val now = System.currentTimeMillis()
+        if (now - backPressedTime < 2000) {
+            (context as? android.app.Activity)?.finish()
+        } else {
+            backPressedTime = now
+            Toast.makeText(context, "한 번 더 누르면 종료됩니다", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
