@@ -4292,8 +4292,7 @@
                         "position": 1
                       }
                     ]
-                  },
-                  "cornerRadius": 24
+                  }
                 }
               ]
             },
@@ -4319,7 +4318,6 @@
                   "clip": true,
                   "width": 108,
                   "height": 108,
-                  "cornerRadius": 24,
                   "layout": "none",
                   "children": [
                     {
