@@ -118,7 +118,7 @@ private fun QuoteCard(message: String) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "오늘의 명언",
+                text = "오늘의 이야기",
                 fontSize = 16.sp,
                 color = Neutral600
             )
