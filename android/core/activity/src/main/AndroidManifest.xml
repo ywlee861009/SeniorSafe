@@ -8,12 +8,12 @@
 
     <application>
         <service
-            android:name="com.seniorsafe.core.activity.service.ActivityMonitorService"
+            android:name="com.kero.anbu.core.activity.service.ActivityMonitorService"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
         <receiver
-            android:name="com.seniorsafe.core.activity.receiver.BootReceiver"
+            android:name="com.kero.anbu.core.activity.receiver.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

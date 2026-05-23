@@ -18,7 +18,7 @@ Build configuration is centralized through `gradle/libs.versions.toml` and conve
 
 ## UI and Compose
 
-- Use `SeniorSafeTheme` from `:core:ui`.
+- Use `AnbuTheme` from `:core:ui`.
 - Prefer Material 3 components.
 - Use `ViewModel`, `StateFlow`, and `collectAsStateWithLifecycle` for screen state.
 

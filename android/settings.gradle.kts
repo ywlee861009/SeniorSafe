@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SeniorSafe"
+rootProject.name = "Anbu"
 
 include(":app")
 

@@ -1,4 +1,4 @@
--keep class com.seniorsafe.core.model.** { *; }
+-keep class com.kero.anbu.core.model.** { *; }
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn okhttp3.**

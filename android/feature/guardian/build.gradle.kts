@@ -1,8 +1,8 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.feature)
+    alias(libs.plugins.anbu.android.feature)
 }
 
-android { namespace = "com.seniorsafe.feature.guardian" }
+android { namespace = "com.kero.anbu.feature.guardian" }
 
 dependencies {
     implementation(project(":core:datastore"))

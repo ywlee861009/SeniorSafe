@@ -1,19 +1,19 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.library)
-    alias(libs.plugins.seniorsafe.android.hilt)
+    alias(libs.plugins.anbu.android.library)
+    alias(libs.plugins.anbu.android.hilt)
 }
 
 android {
-    namespace = "com.seniorsafe.core.network"
+    namespace = "com.kero.anbu.core.network"
     buildFeatures {
         buildConfig = true
     }
     defaultConfig {
         val apiBaseUrl = providers
-            .gradleProperty("SENIORSAFE_API_BASE_URL")
+            .gradleProperty("ANBU_API_BASE_URL")
             .orElse("http://10.0.2.2:8000/")
             .get()
-        buildConfigField("String", "SENIORSAFE_API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "ANBU_API_BASE_URL", "\"$apiBaseUrl\"")
     }
 }
 

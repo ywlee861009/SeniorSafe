@@ -80,8 +80,8 @@ hilt                        = { id = "com.google.dagger.hilt.android",    versio
 google-services             = { id = "com.google.gms.google-services",    version = "4.4.2" }
 
 # Convention plugins (build-logic)
-seniorsafe-android-application = { id = "seniorsafe.android.application" }
-seniorsafe-android-library     = { id = "seniorsafe.android.library" }
-seniorsafe-android-compose     = { id = "seniorsafe.android.compose" }
-seniorsafe-android-feature     = { id = "seniorsafe.android.feature" }
-seniorsafe-android-hilt        = { id = "seniorsafe.android.hilt" }
+anbu-android-application = { id = "anbu.android.application" }
+anbu-android-library     = { id = "anbu.android.library" }
+anbu-android-compose     = { id = "anbu.android.compose" }
+anbu-android-feature     = { id = "anbu.android.feature" }
+anbu-android-hilt        = { id = "anbu.android.hilt" }

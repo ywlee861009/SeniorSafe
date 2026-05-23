@@ -1,15 +1,15 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.application)
-    alias(libs.plugins.seniorsafe.android.compose)
-    alias(libs.plugins.seniorsafe.android.hilt)
+    alias(libs.plugins.anbu.android.application)
+    alias(libs.plugins.anbu.android.compose)
+    alias(libs.plugins.anbu.android.hilt)
     // google-services: Firebase 콘솔에서 google-services.json 발급 후 주석 해제
     // alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "com.seniorsafe"
+    namespace = "com.kero.anbu"
     defaultConfig {
-        applicationId = "com.seniorsafe"
+        applicationId = "com.kero.anbu"
         versionCode = 1
         versionName = "1.0.0"
     }

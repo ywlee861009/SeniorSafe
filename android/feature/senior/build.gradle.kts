@@ -1,8 +1,8 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.feature)
+    alias(libs.plugins.anbu.android.feature)
 }
 
-android { namespace = "com.seniorsafe.feature.senior" }
+android { namespace = "com.kero.anbu.feature.senior" }
 
 dependencies {
     implementation(project(":core:activity"))

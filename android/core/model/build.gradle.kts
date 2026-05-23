@@ -1,8 +1,8 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.library)
+    alias(libs.plugins.anbu.android.library)
 }
 
-android { namespace = "com.seniorsafe.core.model" }
+android { namespace = "com.kero.anbu.core.model" }
 
 dependencies {
     // @SerializedName 어노테이션 사용

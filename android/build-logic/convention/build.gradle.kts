@@ -5,7 +5,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "com.seniorsafe.buildlogic"
+group = "com.kero.anbu.buildlogic"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -26,23 +26,23 @@ dependencies {
 gradlePlugin {
     plugins {
         register("androidApplication") {
-            id = "seniorsafe.android.application"
+            id = "anbu.android.application"
             implementationClass = "AndroidApplicationConventionPlugin"
         }
         register("androidLibrary") {
-            id = "seniorsafe.android.library"
+            id = "anbu.android.library"
             implementationClass = "AndroidLibraryConventionPlugin"
         }
         register("androidCompose") {
-            id = "seniorsafe.android.compose"
+            id = "anbu.android.compose"
             implementationClass = "AndroidComposeConventionPlugin"
         }
         register("androidFeature") {
-            id = "seniorsafe.android.feature"
+            id = "anbu.android.feature"
             implementationClass = "AndroidFeatureConventionPlugin"
         }
         register("androidHilt") {
-            id = "seniorsafe.android.hilt"
+            id = "anbu.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
     }

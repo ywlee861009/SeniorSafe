@@ -8,10 +8,10 @@
         android:name=".App"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="SeniorSafe"
+        android:label="안부"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SeniorSafe">
+        android:theme="@style/Theme.Anbu">
 
         <activity
             android:name=".MainActivity"
@@ -25,7 +25,7 @@
 
         <!-- FCM -->
         <service
-            android:name="com.seniorsafe.feature.guardian.firebase.GuardianFcmService"
+            android:name="com.kero.anbu.feature.guardian.firebase.GuardianFcmService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

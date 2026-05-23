@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.library)
-    alias(libs.plugins.seniorsafe.android.compose)
+    alias(libs.plugins.anbu.android.library)
+    alias(libs.plugins.anbu.android.compose)
 }
 
-android { namespace = "com.seniorsafe.core.ui" }
+android { namespace = "com.kero.anbu.core.ui" }

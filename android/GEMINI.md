@@ -6,7 +6,7 @@
 - `:feature:*`: 개별 사용자 흐름. 다른 기능 모듈에 의존해서는 안 됨.
 
 ## 🎨 UI 및 Compose
-- `:core:ui`의 `SeniorSafeTheme`을 사용합니다.
+- `:core:ui`의 `AnbuTheme`을 사용합니다.
 - Material 3 컴포넌트 사용을 지향합니다.
 - 상태 관리: `ViewModel`과 `StateFlow`, `collectAsStateWithLifecycle`을 사용합니다.
 

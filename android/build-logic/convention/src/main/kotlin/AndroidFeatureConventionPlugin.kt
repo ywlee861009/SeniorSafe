@@ -7,9 +7,9 @@ import org.gradle.kotlin.dsl.getByType
 class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            pluginManager.apply("seniorsafe.android.library")
-            pluginManager.apply("seniorsafe.android.compose")
-            pluginManager.apply("seniorsafe.android.hilt")
+            pluginManager.apply("anbu.android.library")
+            pluginManager.apply("anbu.android.compose")
+            pluginManager.apply("anbu.android.hilt")
 
             val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 

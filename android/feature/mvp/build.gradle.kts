@@ -1,10 +1,10 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.library)
-    alias(libs.plugins.seniorsafe.android.compose)
-    alias(libs.plugins.seniorsafe.android.hilt)
+    alias(libs.plugins.anbu.android.library)
+    alias(libs.plugins.anbu.android.compose)
+    alias(libs.plugins.anbu.android.hilt)
 }
 
-android { namespace = "com.seniorsafe.feature.mvp" }
+android { namespace = "com.kero.anbu.feature.mvp" }
 
 dependencies {
     implementation(project(":core:ui"))

@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.seniorsafe.android.library)
-    alias(libs.plugins.seniorsafe.android.hilt)
+    alias(libs.plugins.anbu.android.library)
+    alias(libs.plugins.anbu.android.hilt)
 }
 
-android { namespace = "com.seniorsafe.core.diagnostics" }
+android { namespace = "com.kero.anbu.core.diagnostics" }
 
 dependencies {
     implementation(project(":core:util"))
