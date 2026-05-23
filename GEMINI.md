@@ -11,6 +11,20 @@ SeniorSafe 멀티 플랫폼 안전 시스템의 기본 지침입니다.
 - **Android**: Kotlin 2.0, Compose, Hilt, Retrofit, DataStore.
 - **Backend**: Python 3.12+, FastAPI, PostgreSQL.
 
+## 📂 문서 맵 (Documentation Map)
+상세 지침은 각 하위 디렉토리의 `GEMINI.md`를 참조하십시오.
+- **Android**: `android/GEMINI.md`
+    - Core: `android/core/GEMINI.md`
+    - UI: `android/core/ui/GEMINI.md`
+    - Data: `android/core/data/GEMINI.md`
+    - Model: `android/core/model/GEMINI.md`
+    - Network: `android/core/network/GEMINI.md`
+    - Feature: `android/feature/GEMINI.md`
+- **Backend**: `backend/GEMINI.md`
+    - Routers: `backend/app/routers/GEMINI.md`
+    - Services: `backend/app/services/GEMINI.md`
+    - Schemas: `backend/app/schemas/GEMINI.md`
+
 ## 📏 일반 규칙
 - **명명 규칙**: 클래스/타입은 `PascalCase`, 변수/함수는 `camelCase`(Kotlin) 또는 `snake_case`(Python/SQL)를 사용합니다.
 - **문서화**: 모든 공개 함수와 복잡한 로직에는 KDoc/Docstring을 작성해야 합니다.
