@@ -1,32 +1,24 @@
 # API Spec
 
-Base URL:
+Base URL (Supabase Edge Functions):
 
 ```text
-http://<server-host>/
+https://<project-id>.supabase.co/functions/v1/
 ```
 
-MVP는 사용자 로그인 없이 동작한다. 보호가 필요한 엔드포인트는 기기 등록 시 발급받은 device token을 사용한다.
+MVP는 사용자 로그인 없이 동작한다. 보호가 필요한 엔드포인트는 기기 등록 시 발급받은 커스텀 device JWT를 사용한다.
 
 ```http
 Authorization: Bearer <device_access_token>
 ```
 
-> **구현 상태 표기**: ✅ 구현됨 / ⚠️ Planned — 백엔드와 Android 클라이언트 양쪽에 코드가 아직 없음. 페이로드·응답 예시는 향후 구현 시 사용할 설계 명세로 보존.
-
-## Health ✅ 구현됨
-
-`GET /health`
-
-```json
-{"status":"ok"}
-```
+> **구현 상태 표기**: ✅ 백엔드 구현됨 / ⚠️ Android 미연결 — 백엔드 Edge Function은 구현 완료, Android 클라이언트 연동은 미구현.
 
 ## Devices ✅ 구현됨
 
 ### Register Device ✅ 구현됨
 
-`POST /devices/register`
+`POST /functions/v1/device-register`
 
 요청:
 
@@ -58,7 +50,7 @@ Authorization: Bearer <device_access_token>
 
 ### Update FCM Token ✅ 구현됨
 
-`PUT /devices/fcm-token`
+`PUT /functions/v1/fcm-token`
 
 인증: device token 필요.
 
@@ -74,7 +66,7 @@ Authorization: Bearer <device_access_token>
 
 ### Get Current Device ✅ 구현됨
 
-`GET /devices/me`
+`GET /rest/v1/devices` (PostgREST, RLS가 자기 기기만 반환)
 
 인증: device token 필요.
 
@@ -94,7 +86,7 @@ Authorization: Bearer <device_access_token>
 
 ### Create Pairing Code ✅ 구현됨
 
-`POST /pairing/codes`
+`POST /functions/v1/pairing-codes`
 
 인증: senior device token 필요.
 
@@ -116,7 +108,7 @@ Authorization: Bearer <device_access_token>
 
 ### Claim Pairing Code ✅ 구현됨
 
-`POST /pairings`
+`POST /functions/v1/pairing-claim`
 
 인증: guardian device token 필요.
 
@@ -146,7 +138,7 @@ Authorization: Bearer <device_access_token>
 
 ### List Pairings ✅ 구현됨
 
-`GET /pairings`
+`GET /functions/v1/pairings-list`
 
 인증: device token 필요.
 
@@ -185,7 +177,7 @@ Authorization: Bearer <device_access_token>
 
 ### Disconnect Pairing ✅ 구현됨
 
-`DELETE /pairings/{pairing_id}`
+`POST /functions/v1/pairing-disconnect`
 
 인증: pairing에 속한 senior 또는 guardian device token 필요.
 
@@ -198,22 +190,24 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-## Activity ⚠️ Planned — 백엔드·Android 양쪽 미구현
+## Activity ✅ 백엔드 구현됨 — Android 연동 미구현
 
-### Record Activity Event ⚠️ Planned
+### Record Activity Events ✅ 백엔드 구현됨
 
-`POST /activity/events`
+`POST /functions/v1/activity-events`
 
 인증: senior device token 필요.
 
-어르신 기기에서 활동 신호(잠금해제, 충전기 연결/해제 등)를 감지했을 때 호출한다. 서버는 이벤트를 저장하고 해당 기기의 `last_activity_at`을 갱신한다.
+어르신 기기에서 활동 신호(잠금해제, 충전기 연결/해제 등)를 배치로 업로드한다. 서버는 이벤트를 저장하고 해당 기기의 `last_activity_at`을 갱신한다.
 
 요청:
 
 ```json
 {
-  "occurred_at": "2026-05-16T08:30:00Z",
-  "source": "user_present"
+  "events": [
+    { "occurred_at": "2026-05-16T08:30:00Z", "source": "user_present" },
+    { "occurred_at": "2026-05-16T09:00:00Z", "source": "power_connected" }
+  ]
 }
 ```
 
@@ -221,30 +215,25 @@ Authorization: Bearer <device_access_token>
 
 ```json
 {
-  "event_id": "uuid",
-  "last_activity_at": "2026-05-16T08:30:00Z"
+  "accepted": 2
 }
 ```
 
 정책:
 
-- `source` 값: `user_present`(잠금해제), `power_connected`(충전기 연결), `power_disconnected`(충전기 해제). 향후 `step_detected` 등 추가 가능.
-- `source` 기본값은 `user_present`다.
-- 같은 이벤트가 재전송될 수 있으므로 서버는 가까운 시간대 중복 기록 정책을 정해야 한다.
-- 네트워크 실패 후 Android가 재시도할 수 있다.
-- guardian 기기는 이 API를 호출할 수 없다.
+- `source` 값: `user_present`(잠금해제), `power_connected`(충전기 연결), `power_disconnected`(충전기 해제).
+- 배치 전송 — `events` 배열로 여러 이벤트를 한 번에 보낸다.
+- `last_activity_at`은 전송된 이벤트 중 가장 최근 `occurred_at`으로 갱신된다.
+- guardian 기기는 이 API를 호출할 수 없다 (403).
 
-### List Activity Events ⚠️ Planned
+### List Activity Events ✅ 백엔드 구현됨
 
-`GET /activity/events/{senior_device_id}`
+`GET /functions/v1/activity-events-list?senior_device_id=<uuid>&limit=50&offset=0`
 
-인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
+인증: senior 본인 또는 active pairing된 guardian device token 필요.
 
-쿼리:
-
-```text
-limit=50
-```
+- Senior: `senior_device_id` 파라미터 불필요 (자동으로 본인)
+- Guardian: `senior_device_id` 필수, 페어링 확인 후 조회
 
 응답:
 
@@ -257,25 +246,30 @@ limit=50
       "received_at": "2026-05-16T08:30:05Z",
       "source": "user_present"
     }
-  ]
+  ],
+  "total": 100,
+  "limit": 50,
+  "offset": 0
 }
 ```
 
-### Record Service Event ⚠️ Planned
+### Record Service Events ✅ 백엔드 구현됨
 
-`POST /activity/service-events`
+`POST /functions/v1/service-events`
 
-인증: device token 필요.
+인증: device token 필요 (모든 역할).
 
-Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도, 오류 등을 서버에 남긴다.
+Android foreground service 실행 내역, heartbeat, 오류 등을 배치로 업로드한다.
 
 요청:
 
 ```json
 {
-  "event_type": "heartbeat",
-  "occurred_at": "2026-05-16T08:31:00Z",
-  "detail": "monitor service heartbeat"
+  "events": [
+    { "event_type": "started", "occurred_at": "2026-05-16T08:00:00Z" },
+    { "event_type": "heartbeat", "occurred_at": "2026-05-16T08:05:00Z" },
+    { "event_type": "error", "occurred_at": "2026-05-16T08:06:00Z", "detail": "sensor failure" }
+  ]
 }
 ```
 
@@ -283,20 +277,22 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
 
 ```json
 {
-  "event_id": "uuid"
+  "accepted": 3
 }
 ```
 
 정책:
 
-- MVP에서는 모든 서비스 이벤트를 저장하되, heartbeat는 저장량이 커질 수 있으므로 보존 기간 또는 샘플링 정책을 둔다.
-- `event_type` 후보: `started`, `stopped`, `heartbeat`, `boot_completed`, `unlock_upload_failed`, `error`.
+- `event_type` 값: `started`, `stopped`, `heartbeat`, `error`.
+- `detail`은 선택 필드.
 
-### List Service Events ⚠️ Planned
+### List Service Events ✅ 백엔드 구현됨
 
-`GET /activity/service-events/{device_id}`
+`GET /functions/v1/service-events-list?device_id=<uuid>&limit=50&offset=0`
 
-인증: 대상 기기 본인 또는 active pairing 관계의 상대 기기 필요.
+인증: 본인 기기 또는 active pairing된 guardian이 senior의 이벤트 조회 가능.
+
+- `device_id` 생략 시 본인 기기의 이벤트 조회.
 
 응답:
 
@@ -308,54 +304,52 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
       "event_type": "started",
       "occurred_at": "2026-05-16T08:00:00Z",
       "received_at": "2026-05-16T08:00:02Z",
-      "detail": "monitor service started"
+      "detail": null
     }
-  ]
+  ],
+  "total": 50,
+  "limit": 50,
+  "offset": 0
 }
 ```
 
-## Inactivity Alerts ⚠️ Planned — 백엔드·Android 양쪽 미구현
+## Inactivity Alerts ✅ 백엔드 구현됨 — Android 연동 미구현
 
-### Run Inactivity Alert Batch ⚠️ Planned
+### Run Inactivity Alert Batch ✅ 백엔드 구현됨
 
-`POST /internal/batches/inactivity-alerts/run`
+`POST /functions/v1/inactivity-check`
 
-인증: 운영용 internal token 또는 관리자 실행 환경 필요.
+인증: `CRON_SECRET` Bearer token (pg_cron에서 자동 호출).
 
-일일 배치에서 호출하거나, 운영자가 수동 실행할 수 있는 내부 API다. MVP 기본 임계값은 2일이다.
-
-요청:
-
-```json
-{
-  "dry_run": false,
-  "now": "2026-05-18T09:00:00Z"
-}
-```
+pg_cron이 매일 00:00 UTC에 자동 실행한다. 수동 실행도 가능.
 
 응답:
 
 ```json
 {
-  "checked_senior_count": 12,
-  "alert_created_count": 2,
-  "push_sent_count": 2,
-  "push_failed_count": 0
+  "checked": 12,
+  "alerts_sent": 2,
+  "alerts_skipped": 1,
+  "alerts_failed": 0,
+  "alerts_deduplicated": 3
 }
 ```
 
 정책:
 
 - active pairing된 보호자에게만 FCM을 발송한다.
-- 같은 미사용 상태에 대해 반복 알림 간격을 제한한다.
-- FCM 실패도 `InactivityAlert` 로그에 남긴다.
-- 실제 운영에서는 HTTP API 대신 CLI/스케줄러로 실행해도 된다.
+- 중복 방지: 마지막 `sent` 알림의 `last_activity_at`이 현재와 동일하면 재발송하지 않는다.
+- FCM 토큰 없는 보호자는 `skipped` 상태로 기록한다.
+- FCM 실패도 `failed` 상태로 `inactivity_alerts` 테이블에 기록한다.
 
-### List Inactivity Alerts ⚠️ Planned
+### List Inactivity Alerts ✅ 백엔드 구현됨
 
-`GET /activity/inactivity-alerts/{senior_device_id}`
+`GET /functions/v1/inactivity-alerts-list?senior_device_id=<uuid>&limit=50&offset=0`
 
-인증: 해당 senior와 active pairing된 guardian device token 또는 senior 본인 device token 필요.
+인증: guardian 또는 senior device token 필요.
+
+- Guardian: 본인 대상 알림 조회, `senior_device_id`로 필터 가능 (페어링 확인)
+- Senior: 본인 관련 알림 조회
 
 응답:
 
@@ -369,11 +363,14 @@ Android foreground service 실행 내역, heartbeat, 부팅 후 재시작 시도
       "threshold_days": 2,
       "last_activity_at": "2026-05-16T08:30:00Z",
       "sent_at": "2026-05-18T09:00:00Z",
-      "status": "sent"
+      "status": "sent",
+      "detail": null
     }
-  ]
+  ],
+  "total": 5,
+  "limit": 50,
+  "offset": 0
 }
-```
 
 ## Deferred: Fall
 

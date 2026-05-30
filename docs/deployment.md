@@ -1,82 +1,105 @@
 # Deployment
 
-Target: Oracle Cloud Infrastructure Always Free VM, Ubuntu, Docker Compose.
+## Supabase 호스팅
 
-## Server Shape
+백엔드는 Supabase 플랫폼(Edge Functions + PostgreSQL + pg_cron)에서 운영한다.
 
-Recommended free-tier target:
+### 프로젝트 설정
 
-- Shape: `VM.Standard.A1.Flex`
-- Architecture: Arm / `arm64`
-- Size: 1-2 OCPU and 6-12 GB RAM is enough for this stack during development
-- Boot volume: keep within the Always Free block volume allowance
+1. [supabase.com](https://supabase.com)에서 프로젝트 생성
+2. 환경 변수 확인: Dashboard → Settings → API에서 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` 확인
 
-## Docker Setup on Ubuntu
-
-Install Docker Engine from Docker's official apt repository. Docker currently supports Ubuntu 22.04 LTS, 24.04 LTS, 25.10, and 26.04 LTS on `arm64`.
-
-After Docker is installed:
+### 마이그레이션 적용
 
 ```bash
-git clone <repo-url>
-cd SeniorSafe
-cp backend/.env.example .env
+supabase link --project-ref <project-id>
+supabase db push
 ```
 
-Edit `.env` and set strong values for `POSTGRES_PASSWORD` and `SECRET_KEY`.
+마이그레이션 파일:
+- `20260527000001_initial_schema.sql` — 5개 테이블 + RLS
+- `20260527000002_cron_inactivity_check.sql` — pg_cron 스케줄러
+- `20260530000001_add_service_events.sql` — service_events 테이블
 
-Firebase push notifications are needed for inactivity alerts. Place the key on the server:
+### Edge Functions 배포
 
 ```bash
-cp /path/to/firebase-credentials.json backend/firebase-credentials.json
+# 전체 배포
+supabase functions deploy
+
+# 개별 배포
+supabase functions deploy device-register
+supabase functions deploy activity-events
+# ...
 ```
 
-Then mount it into the backend service as `/app/firebase-credentials.json`.
-
-Set the inactivity alert defaults in `.env`:
+### 환경 변수 (Secrets)
 
 ```bash
-INACTIVITY_ALERT_THRESHOLD_DAYS=2
-INACTIVITY_ALERT_REPEAT_HOURS=24
+supabase secrets set SUPABASE_URL=https://<project-id>.supabase.co
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+supabase secrets set SUPABASE_JWT_SECRET=<jwt-secret>
+supabase secrets set FIREBASE_SERVER_KEY=<firebase-server-key>
+supabase secrets set CRON_SECRET=<random-secret>
 ```
 
-Start the stack:
+### pg_cron 설정
+
+`20260527000002_cron_inactivity_check.sql` 마이그레이션이 자동으로 설정:
+- 매일 00:00 UTC (09:00 KST)에 `inactivity-check` Edge Function 호출
+- `CRON_SECRET`으로 인증
+
+pg_cron은 Supabase Pro 플랜에서 사용 가능. Free 플랜에서는 외부 스케줄러(GitHub Actions, cron-job.org 등)로 대체:
 
 ```bash
-docker compose up -d --build
-docker compose logs -f backend
+curl -X POST https://<project-id>.supabase.co/functions/v1/inactivity-check \
+  -H "Authorization: Bearer <CRON_SECRET>" \
+  -H "Content-Type: application/json"
 ```
 
-Check:
+## 로컬 개발
 
 ```bash
-curl http://SERVER_PUBLIC_IP/health
+# Supabase CLI 설치
+brew install supabase/tap/supabase
+
+# 로컬 스택 시작 (PostgreSQL, Studio, Edge Functions 런타임)
+supabase start
+
+# 마이그레이션 적용
+supabase db push
+
+# Edge Function 로컬 실행
+supabase functions serve
+
+# 테스트
+cd supabase/functions && deno test --config=tests/deno.json tests/ --allow-env --allow-net
 ```
 
-## Scheduled Jobs
+로컬 엔드포인트:
+- API: `http://localhost:54321/functions/v1/<function-name>`
+- Studio: `http://localhost:54323`
+- PostgreSQL: `localhost:54322`
 
-The MVP requires a daily inactivity alert batch. The batch checks senior devices whose `last_activity_at` is older than the configured threshold and sends FCM notifications to active guardians.
+## Android 연결
 
-The implementation may run as one of:
+Android 앱의 `BASE_URL`을 Supabase Edge Functions URL로 설정:
 
-- a backend CLI command executed by cron on the host
-- a lightweight scheduler inside the backend container
-- a protected internal endpoint triggered by an external scheduler
+```kotlin
+// core/network/NetworkModule.kt
+const val BASE_URL = "https://<project-id>.supabase.co/functions/v1/"
+```
 
-The batch must write `InactivityAlert` rows for sent and failed notifications so repeated alerts and FCM failures are auditable.
-
-현재 미사용 알림 배치는 미구현 상태이며, `ticket/todo/004-unlock-inactivity-notification-flow.md`에서 다룬다.
-
-## Ports
-
-- `80`: public HTTP through Nginx
-- `8000`: backend exposed for development; remove this port mapping for stricter production deployment
-- `5432`: PostgreSQL is internal only
+로컬 개발 시:
+```kotlin
+const val BASE_URL = "http://10.0.2.2:54321/functions/v1/"
+```
 
 ## Follow-up Production Tasks
 
-- Add HTTPS before real users.
-- Remove the public `8000:8000` mapping after Android points to the Nginx URL.
-- Add database backups for the `postgres_data` Docker volume.
-- Rotate `SECRET_KEY` and database credentials before deployment.
-- Add a monitored daily schedule for inactivity alerts.
+- [ ] Supabase Pro 플랜 전환 (pg_cron, 커스텀 도메인 사용)
+- [ ] 커스텀 도메인 설정 (Supabase Dashboard → Settings → Custom Domains)
+- [ ] Database backups 설정 (Supabase Dashboard → Database → Backups)
+- [ ] Edge Function 로그 모니터링 설정
+- [ ] Firebase Server Key를 FCM HTTP v1 API로 마이그레이션
+- [ ] Rate limiting 정책 추가 (Supabase Edge Functions 레벨)

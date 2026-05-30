@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-SeniorSafe는 Android 앱 1개(어르신/보호자 두 모드)와 FastAPI 백엔드로 구성된 고령자 안부 확인 앱이다.
+SeniorSafe는 Android 앱 1개(어르신/보호자 두 모드)와 Supabase 백엔드(Edge Functions + PostgreSQL)로 구성된 고령자 안부 확인 앱이다.
 
 현재 MVP는 낙상 감지 제품화를 보류하고, 어르신 휴대폰의 활동 기록(잠금해제, 충전기 연결/해제 등)을 백엔드에 저장한 뒤 마지막 활동 후 2일이 지나면 보호자에게 FCM 푸시를 보내는 방향이다.
 
-**구현 현황**: 백엔드는 `/devices`와 `/pairing` 라우터만 구현됐고, 활동 이벤트 수신·미사용 알림 배치는 설계만 있다. Android도 활동 업로드 미연결 — 로컬 Room 기록까지만 구현됨.
+**구현 현황**: 백엔드 Edge Functions 12개 전부 구현 완료(기기 등록, 페어링, 활동 이벤트, 서비스 이벤트, 미활동 알림 배치). 테스트 52개 통과. Android는 활동 업로드 미연결 — 로컬 Room 기록까지만 구현됨.
 
 설계 문서: `docs/`, UI 설계: `design/`, API 명세: `docs/api-spec.md`, 티켓: `ticket/`
 
@@ -14,28 +14,26 @@ SeniorSafe는 Android 앱 1개(어르신/보호자 두 모드)와 FastAPI 백엔
 
 ## 빌드/테스트/실행 명령어
 
-### 백엔드
+### 백엔드 (Supabase)
 
 ```bash
-# Docker로 전체 스택 실행 (PostgreSQL + FastAPI + Nginx)
-docker compose up -d --build
+# 로컬 Supabase 스택 실행
+supabase start
 
-# 백엔드 로그
-docker compose logs -f backend
+# 마이그레이션 적용
+supabase db push
 
-# DB 마이그레이션 (컨테이너 시작 시 자동 실행됨)
-docker compose exec backend alembic upgrade head
+# Edge Functions 개별 배포
+supabase functions deploy <function-name>
 
-# 테스트 (in-memory SQLite 사용, Docker 불필요)
-cd backend && .venv/bin/python -m pytest
+# 전체 Functions 배포
+supabase functions deploy
 
-# 테스트 의존성 설치
-cd backend
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.txt
+# 테스트 (Deno, 로컬 실행)
+cd supabase/functions && deno test --config=tests/deno.json tests/ --allow-env --allow-net
 
-# API 문서: http://localhost:8000/docs
-# 헬스체크: GET http://localhost:8000/health
+# API URL: http://localhost:54321/functions/v1/<function-name>
+# Studio: http://localhost:54323
 ```
 
 ### Android
@@ -61,12 +59,12 @@ Android SDK: compileSdk 35, minSdk 26, targetSdk 35, JVM 17, Kotlin 2.0.21, Comp
 
 | 영역 | 기술 |
 |------|------|
-| Backend | Python 3.12, FastAPI 0.115, SQLAlchemy 2.0 async, Alembic |
-| Database | PostgreSQL 16 |
-| 푸시 알림 | Firebase Cloud Messaging |
-| 기기 인증 | 서버 발급 device access token |
-| 컨테이너 | Docker + Docker Compose |
-| 리버스 프록시 | Nginx 1.27 |
+| Backend | Supabase Edge Functions (Deno/TypeScript) |
+| Database | Supabase PostgreSQL (RLS 적용) |
+| 스키마 관리 | Supabase Migrations |
+| 배치 스케줄러 | pg_cron (매일 00:00 UTC) |
+| 푸시 알림 | Firebase Cloud Messaging (Legacy HTTP API) |
+| 기기 인증 | 커스텀 device JWT (HS256, djwt) + RLS |
 | Android | Kotlin 2.0.21, Jetpack Compose, Hilt, Retrofit, OkHttp, FCM |
 | Android 로컬 로그 | Room |
 
@@ -74,107 +72,88 @@ Android SDK: compileSdk 35, minSdk 26, targetSdk 35, JVM 17, Kotlin 2.0.21, Comp
 
 ## 백엔드 아키텍처 규칙
 
-### 레이어 역할
+### 구조
 
-| 레이어 | 역할 | 금지 사항 |
-|--------|------|----------|
-| `routers/` | 요청 수신, service 호출, 응답 반환 | DB 직접 접근, 비즈니스 로직 |
-| `services/` | 비즈니스 로직, DB 조작, FCM 호출 | HTTP 요청/응답 조립 |
-| `models/` | 테이블 정의 | 비즈니스 로직 |
-| `schemas/` | 입출력 스키마 | DB 접근 |
+```text
+supabase/
+├── config.toml                    # Supabase 로컬 설정
+├── .env.example                   # 환경 변수 템플릿
+├── migrations/                    # PostgreSQL 마이그레이션
+│   ├── 20260527000001_initial_schema.sql
+│   ├── 20260527000002_cron_inactivity_check.sql
+│   └── 20260530000001_add_service_events.sql
+└── functions/
+    ├── _shared/                   # 공유 유틸 (cors, auth, jwt, supabase client)
+    ├── <function-name>/index.ts   # 각 Edge Function
+    └── tests/                     # Deno 테스트 (52개)
+```
 
-### 파일 네이밍
+### Edge Function 네이밍
 
-- 파일명: `snake_case.py`
-- 클래스: `PascalCase`
-- 함수/변수: `snake_case`
-- 라우터 파일명은 기능 단위로 둔다. 현재 핵심 후보: `devices.py`, `pairing.py`, `activity.py`, `batches.py`
+- 디렉토리: `kebab-case` (예: `activity-events-list`)
+- 핸들러: `export const handler` + `serve(handler)` 패턴
+- 공유 모듈: `_shared/` 하위에 배치
 
 ### 인증 방식
 
+- 커스텀 device JWT (HS256, SUPABASE_JWT_SECRET으로 서명, 365일 만료)
 - 헤더: `Authorization: Bearer <device_access_token>`
-- 보호된 엔드포인트: `current_device: Device = Depends(get_current_device)`
-- `get_current_device`는 `core/security.py`에 정의한다.
-- 사용자 계정/JWT 로그인은 현재 MVP 범위가 아니다.
+- `getDeviceFromRequest(req)` → `DeviceInfo { id, role, display_name }` 반환
+- Edge Functions는 `service_role` key로 RLS 우회
+- RLS가 DB 레이어에서 보안 강제 (5개 테이블 적용)
+- 사용자 계정/Supabase Auth 로그인은 MVP 범위가 아니다
 
 > **Android 구현 현황**: device_access_token 발급/저장/주입 로직 미구현. 현재 `TokenDataStore`는 user JWT용이며, 각 Repository가 `tokenDataStore.getAccessToken()`을 호출 사이트별로 수동 주입한다. OkHttp Interceptor 없음. device token Interceptor 통일은 `ticket/todo/006` 참고.
 
-### 라우터 prefix 기준 / 구현 상태
+### Edge Function 구현 상태
 
-| 라우터 | 구현 상태 |
+| Function | 구현 상태 |
 |---|---|
-| `/devices` | ✅ 구현됨 (register, me, fcm-token) |
-| `/pairing` (codes) | ✅ 구현됨 |
-| `/pairings` (claim/list/disconnect) | ✅ 구현됨 |
-| `/activity` | ⚠️ 미구현 (planned) |
-| `/internal/batches` | ⚠️ 미구현 (planned) |
+| `device-register` | ✅ 기기 등록 + 토큰 발급 |
+| `fcm-token` | ✅ FCM 토큰 갱신 |
+| `pairing-codes` | ✅ 페어링 코드 생성 (시니어) |
+| `pairing-claim` | ✅ 페어링 코드 사용 (보호자) |
+| `pairing-disconnect` | ✅ 페어링 해제 |
+| `pairings-list` | ✅ 페어링 목록 (역할별) |
+| `activity-events` | ✅ 활동 이벤트 수신 (시니어) |
+| `activity-events-list` | ✅ 활동 이벤트 조회 |
+| `service-events` | ✅ 서비스 이벤트 수신 |
+| `service-events-list` | ✅ 서비스 이벤트 조회 |
+| `inactivity-check` | ✅ 미활동 알림 배치 (pg_cron, 중복 방지 포함) |
+| `inactivity-alerts-list` | ✅ 미사용 알림 이력 조회 |
 
-```python
-app.include_router(devices_router, prefix="/devices")
-app.include_router(pairing_router, prefix="/pairing")
-app.include_router(pairings_router, prefix="/pairings")
-app.include_router(activity_router, prefix="/activity")  # 미구현
-```
-
-배치 실행은 CLI, scheduler, 또는 보호된 internal endpoint 중 하나로 구현한다.
+배치 실행은 pg_cron (매일 00:00 UTC)으로 `inactivity-check` Edge Function을 HTTP 호출한다.
 
 ---
 
-## 데이터 모델 요약
+## 데이터 모델 요약 (Supabase PostgreSQL)
+
+6개 테이블, 전부 RLS 적용. 마이그레이션 3개로 관리.
 
 ```text
-Device
-├── id
-├── install_id_hash
-├── role                 (senior | guardian)
-├── display_name
-├── fcm_token
-├── token_hash
-├── created_at
-├── last_seen_at
-├── last_activity_at
-└── inactivity_threshold_days
+devices              ← 기기 등록/인증
+├── id (UUID PK), install_id_hash, role, display_name
+├── fcm_token, token_hash, created_at, last_seen_at
+├── last_activity_at, inactivity_threshold_days (default 2)
 
-PairingCode
-├── code
-├── senior_device_id
-├── expires_at
-├── consumed_at
-└── created_at
+pairing_codes        ← 6자리 페어링 코드 (10분 만료)
+├── code (PK), senior_device_id (FK), expires_at, consumed_at
 
-Pairing
-├── id
-├── senior_device_id
-├── guardian_device_id
-├── active
-├── status
-├── created_at
-└── disconnected_at
+pairings             ← 어르신-보호자 연결 관계
+├── id (UUID PK), senior_device_id (FK), guardian_device_id (FK)
+├── status (pending|active|disconnected), active, disconnected_at
 
-ActivityEvent
-├── id
-├── senior_device_id
-├── occurred_at
-├── received_at
-└── source               (user_present | power_connected | power_disconnected)
+activity_events      ← 어르신 활동 이벤트 (잠금해제, 충전 등)
+├── id (UUID PK), senior_device_id (FK)
+├── occurred_at, received_at, source (user_present|power_connected|power_disconnected)
 
-ServiceEvent
-├── id
-├── device_id
-├── event_type
-├── occurred_at
-├── received_at
-└── detail
+service_events       ← 서비스 생명주기 이벤트
+├── id (UUID PK), device_id (FK)
+├── event_type (started|stopped|heartbeat|error), occurred_at, received_at, detail
 
-InactivityAlert
-├── id
-├── senior_device_id
-├── guardian_device_id
-├── threshold_days
-├── last_activity_at
-├── sent_at
-├── status
-└── detail
+inactivity_alerts    ← 미활동 알림 발송 이력
+├── id (UUID PK), senior_device_id (FK), guardian_device_id (FK)
+├── threshold_days, last_activity_at, sent_at, status (sent|skipped|failed), detail
 ```
 
 낙상 관련 `FallEvent`는 현재 MVP에서 보류한다.

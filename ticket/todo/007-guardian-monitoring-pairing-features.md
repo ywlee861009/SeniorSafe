@@ -8,7 +8,7 @@ P1
 
 보호자 화면은 기존 user 관계와 placeholder 상태에 기대는 부분이 있다. 새 구조에서는 active pairing 기준으로 연결된 어르신, 마지막 잠금해제 시각, 미사용 알림 이력, 알림 탭 이동, 연결 해제를 제공해야 한다.
 
-2026-05-20 현재 Android 보호자 ViewModel/Repository는 아직 피벗 전 `PairingItem` 필드(`senior_id`, `senior_name`, `service_active`, `last_fall_at`)와 구 API(`pairing/list`)를 사용한다. 백엔드는 `GET /pairings`에서 device/pairing 기준 목록을 제공하지만 `last_activity_at`과 미사용 알림 이력은 아직 미구현이다.
+2026-05-30 현재 Android 보호자 ViewModel/Repository는 아직 피벗 전 `PairingItem` 필드(`senior_id`, `senior_name`, `service_active`, `last_fall_at`)와 구 API(`pairing/list`)를 사용한다. 백엔드(Supabase)는 `pairings-list`에서 `last_activity_at`과 `inactivity_threshold_days`를 포함한 보호자 뷰를 제공하고, `inactivity-alerts-list`에서 미사용 알림 이력 조회가 가능하다. **백엔드 의존성은 전부 해소됨 — 남은 작업은 Android 클라이언트만.**
 
 ## 작업 범위
 

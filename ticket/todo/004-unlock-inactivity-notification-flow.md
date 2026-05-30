@@ -23,46 +23,22 @@ P0
 
 ## 작업 범위
 
-### 백엔드
+### 백엔드 ✅ 전부 구현 완료 (Supabase Edge Functions)
 
-- Device 모델에 활동 상태 필드 추가:
-  - `last_activity_at`
-  - `inactivity_threshold_days` 또는 전역 기본값 사용
-- 활동 이벤트 모델 추가:
-  - `ActivityEvent`
-  - `senior_device_id`
-  - `occurred_at`
-  - `received_at`
-  - `source`
-- 서비스 실행 이벤트 모델 추가:
-  - `ServiceEvent`
-  - `device_id`
-  - `event_type`
-  - `occurred_at`
-  - `received_at`
-  - `detail`
-- 미사용 알림 모델 추가:
-  - `InactivityAlert`
-  - `senior_device_id`
-  - `guardian_device_id`
-  - `threshold_days`
-  - `last_activity_at`
-  - `sent_at`
-  - `status`
-  - `detail`
-- 활동 API 구현:
-  - `POST /activity/events`
-  - `GET /activity/events/{senior_device_id}`
-  - `POST /activity/service-events`
-  - `GET /activity/service-events/{device_id}`
-  - `GET /activity/inactivity-alerts/{senior_device_id}`
-- 미사용 알림 배치 구현:
-  - 기본 기준: 마지막 잠금해제 2일 경과
-  - active pairing 보호자 FCM token 조회
-  - 같은 미사용 상태에 대한 중복 발송 제한
-  - FCM 성공/실패 로그 저장
-- Alembic 마이그레이션 작성.
-- pytest로 권한, 기록, 배치, 중복 발송 제한을 검증.
+- ✅ Device 모델에 `last_activity_at`, `inactivity_threshold_days` 포함 (initial migration)
+- ✅ `activity_events` 테이블 + RLS (initial migration)
+- ✅ `service_events` 테이블 + RLS (20260530000001 migration)
+- ✅ `inactivity_alerts` 테이블 (initial migration)
+- ✅ 활동 이벤트 수신 (`activity-events` Edge Function)
+- ✅ 활동 이벤트 조회 (`activity-events-list` Edge Function, 페이지네이션)
+- ✅ 서비스 이벤트 수신 (`service-events` Edge Function)
+- ✅ 서비스 이벤트 조회 (`service-events-list` Edge Function, 페이지네이션)
+- ✅ 미사용 알림 이력 조회 (`inactivity-alerts-list` Edge Function)
+- ✅ 미사용 알림 배치 (`inactivity-check` Edge Function, pg_cron 매일 00:00 UTC)
+  - ✅ 중복 발송 방지 (last_activity_at 변경 없으면 스킵)
+  - ✅ FCM 성공/실패/스킵 로그 저장
+- ✅ Supabase Migrations 3개 작성
+- ✅ Deno 테스트 52개 통과 (권한, 기록, 배치, 중복 방지 검증)
 
 ### Android
 

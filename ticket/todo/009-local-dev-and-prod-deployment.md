@@ -6,34 +6,30 @@ P1
 
 ## 문제
 
-Docker Compose 배포 골격은 있지만 운영 환경으로 보기에는 아직 부족하다. 또한 새 기획에서는 Firebase, 기기 등록, FCM 발송, 페어링 코드, 잠금해제 이벤트, 미사용 알림 배치를 local/dev/prod 환경에서 각각 안정적으로 검증할 수 있어야 한다.
+백엔드가 Supabase로 전환되면서 Docker Compose 기반 배포 내용은 대부분 무효화됐다. Supabase 플랫폼 기준으로 로컬/프로덕션 환경을 재정리해야 한다.
 
 ## 작업 범위
 
-- 로컬 Docker Compose 실행 가이드를 새 API 흐름에 맞춰 갱신한다.
-- dev 서버와 production 서버의 환경 변수 목록을 분리한다.
-- 운영 compose에서 public `8000:8000` 매핑을 제거한다.
-- Nginx 또는 다른 reverse proxy를 통해서만 backend에 접근하도록 한다.
-- HTTPS 구성을 정한다.
-  - Certbot
-  - Caddy
-  - Traefik
-  - cloud load balancer
-- 기본 `SECRET_KEY`와 DB 비밀번호를 운영에서 사용할 수 없도록 강제한다.
-- Firebase credentials를 안전하게 mount한다.
-- 미사용 알림 배치를 매일 실행하는 방식을 정한다.
-  - host cron
-  - backend scheduler
-  - external scheduler + internal endpoint
-- 배치 실행 로그와 실패 알림 방식을 정한다.
-- PostgreSQL 백업 및 복구 절차를 추가한다.
-- health check와 기본 장애 대응 runbook을 작성한다.
+### Supabase 전환으로 변경된 사항
+- ~~Docker Compose 배포~~ → Supabase 호스팅 (Edge Functions + PostgreSQL)
+- ~~Nginx reverse proxy~~ → Supabase 자체 인프라
+- ~~Alembic 마이그레이션~~ → Supabase Migrations
+- ~~host cron / backend scheduler~~ → ✅ pg_cron 구현 완료 (매일 00:00 UTC)
+
+### 남은 작업
+- `docs/deployment.md`를 Supabase 기준으로 갱신 ✅ 완료
+- Supabase Pro 플랜 전환 검토 (pg_cron, 커스텀 도메인)
+- `supabase secrets set`으로 환경 변수 설정 문서화
+- Supabase Database backups 설정
+- Edge Function 로그 모니터링 설정
+- Firebase Server Key → FCM HTTP v1 API 마이그레이션 검토
+- Rate limiting 정책 추가 (Supabase Edge Functions 레벨)
+- Android `BASE_URL` 전환 (`10.0.2.2:8000` → Supabase URL)
 
 ## 완료 조건
 
-- local/dev/prod 실행 방법이 문서화되어 있다.
-- 운영 백엔드는 reverse proxy를 통해서만 외부 접근 가능하다.
-- HTTPS와 방화벽 설정이 문서화되어 있다.
-- 미사용 알림 배치 실행 방식과 수동 실행 방법이 문서화되어 있다.
-- 백업 복구 절차를 최소 1회 검증한다.
-- 운영에서 기본 secret을 실수로 사용할 수 없다.
+- 로컬 개발 환경 (`supabase start`) 가이드가 문서화되어 있다.
+- 프로덕션 Supabase 프로젝트 설정 절차가 문서화되어 있다.
+- 환경 변수(secrets) 관리 방법이 문서화되어 있다.
+- 미사용 알림 배치 실행 방식(pg_cron)과 수동 실행 방법이 문서화되어 있다.
+- Database backups 설정이 완료되어 있다.

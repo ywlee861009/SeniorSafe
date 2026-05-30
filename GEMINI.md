@@ -4,12 +4,12 @@ SeniorSafe 멀티 플랫폼 안전 시스템의 기본 지침입니다.
 
 ## 🏗 아키텍처
 - **Android 멀티 모듈**: `app`, `core`, `feature` 계층을 따르는 클린 아키텍처를 준수합니다.
-- **Backend**: FastAPI와 SQLAlchemy/Alembic을 사용합니다.
+- **Backend**: Supabase Edge Functions (Deno/TypeScript)와 PostgreSQL (RLS)을 사용합니다.
 - **Contract-First**: API 변경 시 구현 전에 `docs/api-spec.md`를 먼저 업데이트해야 합니다.
 
 ## 🛠 기술 스택
 - **Android**: Kotlin 2.0, Compose, Hilt, Retrofit, DataStore.
-- **Backend**: Python 3.12+, FastAPI, PostgreSQL.
+- **Backend**: Supabase Edge Functions (Deno/TypeScript), PostgreSQL (RLS), pg_cron.
 
 ## 📂 문서 맵 (Documentation Map)
 상세 지침은 각 하위 디렉토리의 `GEMINI.md`를 참조하십시오.
@@ -20,13 +20,10 @@ SeniorSafe 멀티 플랫폼 안전 시스템의 기본 지침입니다.
     - Model: `android/core/model/GEMINI.md`
     - Network: `android/core/network/GEMINI.md`
     - Feature: `android/feature/GEMINI.md`
-- **Backend**: `backend/GEMINI.md`
-    - Routers: `backend/app/routers/GEMINI.md`
-    - Services: `backend/app/services/GEMINI.md`
-    - Schemas: `backend/app/schemas/GEMINI.md`
+- **Backend**: `supabase/` (Edge Functions, Migrations, config.toml)
 
 ## 📏 일반 규칙
-- **명명 규칙**: 클래스/타입은 `PascalCase`, 변수/함수는 `camelCase`(Kotlin) 또는 `snake_case`(Python/SQL)를 사용합니다.
+- **명명 규칙**: 클래스/타입은 `PascalCase`, 변수/함수는 `camelCase`(Kotlin/TypeScript) 또는 `snake_case`(SQL)를 사용합니다.
 - **문서화**: 모든 공개 함수와 복잡한 로직에는 KDoc/Docstring을 작성해야 합니다.
 - **테스트**: 모든 새로운 기능이나 버그 수정에는 해당하는 단위/통합 테스트가 필요합니다.
 - **커밋**: Conventional Commits 규약을 따릅니다 (feat:, fix:, chore:, docs:, refactor:).

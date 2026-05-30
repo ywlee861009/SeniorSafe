@@ -83,17 +83,18 @@ Android App
     ├── 연결된 어르신 마지막 사용 시각 조회
     └── 미사용 알림 수신
 
-Nginx
-└── FastAPI Backend
-    ├── Device 등록/인증
-    ├── PairingCode 생성/사용
-    ├── Pairing 관리
-    ├── ActivityEvent 저장
-    ├── 마지막 활동 시각 관리
-    ├── 미사용 배치 실행
-    └── Firebase FCM 발송
+Supabase
+├── Edge Functions (Deno/TypeScript)
+│   ├── Device 등록/인증 (커스텀 JWT)
+│   ├── PairingCode 생성/사용
+│   ├── Pairing 관리
+│   ├── ActivityEvent 수신/조회
+│   ├── ServiceEvent 수신/조회
+│   ├── 미활동 알림 배치 (pg_cron)
+│   └── Firebase FCM 발송
+├── PostgreSQL (RLS 적용)
+└── pg_cron (매일 00:00 UTC)
 
-PostgreSQL
 Firebase FCM
 ```
 
@@ -107,12 +108,12 @@ Firebase FCM
 | 활동 감지 | BroadcastReceiver (`ACTION_USER_PRESENT`, `ACTION_POWER_CONNECTED/DISCONNECTED`) | 잠금해제, 충전기 연결/해제 등 생존 신호를 앱에서 기록 |
 | Android 서비스 | Foreground Service | 서비스 실행 상태와 생존 여부를 사용자와 개발자가 확인 가능 |
 | Android 진단 로그 | Room | 서비스 실행 내역과 활동 이벤트를 앱 재시작 이후에도 확인 |
-| 백엔드 | Python FastAPI | 비동기 처리, 자동 API 문서화 |
-| 데이터베이스 | PostgreSQL | 기기, 페어링, 활동 이벤트, 알림 로그 관계 표현에 적합 |
-| 기기 인증 | 서버 발급 device access token | 사용자 로그인 없이 API 요청 주체 식별 |
+| 백엔드 | Supabase Edge Functions (Deno/TypeScript) | 서버리스, 자동 스케일링, PostgreSQL 통합 |
+| 데이터베이스 | Supabase PostgreSQL (RLS) | 기기, 페어링, 활동 이벤트, 알림 로그; RLS로 DB 레벨 보안 |
+| 스키마 관리 | Supabase Migrations | 선언적 마이그레이션, 로컬/프로덕션 동기화 |
+| 배치 스케줄러 | pg_cron | DB 내장 cron, 매일 미활동 알림 배치 실행 |
+| 기기 인증 | 커스텀 device JWT (HS256, djwt) | Supabase Auth 미사용, RLS와 호환되는 커스텀 토큰 |
 | 푸시 알림 | Firebase Cloud Messaging (FCM) | Android 표준, 백그라운드 알림 보장 |
-| 컨테이너 | Docker + Docker Compose | 이식성, 서버 이전 용이 |
-| 리버스 프록시 | Nginx | SSL 종단, 정적 파일 서빙 |
 
 ---
 
@@ -171,20 +172,19 @@ Firebase FCM
 - 어르신별 마지막 활동 시각 조회 (백엔드 미구현)
 - N일 미사용 FCM 알림 수신 (`google-services.json` 미등록)
 
-### 백엔드 API 및 배치
+### 백엔드 API 및 배치 (Supabase Edge Functions)
 
-구현됨:
-- 기기 등록 및 device token 발급 (`/devices/register`)
-- FCM token 등록/갱신 (`/devices/fcm-token`)
-- 내 기기 정보 조회 (`/devices/me`)
-- 연결 코드 생성 (`/pairing/codes`)
-- active pairing 연결/조회/해제 (`/pairings`)
-
-미구현:
-- 활동 이벤트 수신 (`/activity/events`)
-- 서비스 실행 내역 수신 (`/activity/service-events`)
-- 미사용 알림 배치 실행 (`/internal/batches/inactivity-alerts/run`)
-- 보호자 FCM 발송
+전체 구현 완료 (12개 Edge Function, 52개 테스트 통과):
+- 기기 등록 및 device JWT 발급 (`device-register`)
+- FCM token 갱신 (`fcm-token`)
+- 내 기기 정보 조회 (PostgREST + RLS)
+- 연결 코드 생성/사용 (`pairing-codes`, `pairing-claim`)
+- 페어링 목록/해제 (`pairings-list`, `pairing-disconnect`)
+- 활동 이벤트 수신/조회 (`activity-events`, `activity-events-list`)
+- 서비스 이벤트 수신/조회 (`service-events`, `service-events-list`)
+- 미활동 알림 배치 (`inactivity-check` — pg_cron, 중복 방지 포함)
+- 미활동 알림 이력 조회 (`inactivity-alerts-list`)
+- 보호자 FCM 발송 (Legacy HTTP API)
 
 ---
 
@@ -217,7 +217,7 @@ Firebase FCM
  │  (잠금해제/충전 연결/해제) │
  ├─ 로컬 DB 기록            │
  ├─ Room unlock_events insert
- ├─ [미구현] POST /activity/events ──▶
+ ├─ [Android 미연결] POST /functions/v1/activity-events ──▶
  │                         ├─ ActivityEvent 저장
  │                         └─ Device.last_activity_at 갱신
 ```
@@ -329,23 +329,20 @@ InactivityAlert
 
 ---
 
-## 환경 변수 (.env)
+## 환경 변수
 
 ```text
-# Database
-POSTGRES_USER=seniorsafe
-POSTGRES_PASSWORD=
-POSTGRES_DB=seniorsafe_db
-
-# App
-SECRET_KEY=
-DEVICE_TOKEN_EXPIRE_DAYS=365
-PAIRING_CODE_EXPIRE_MINUTES=10
-INACTIVITY_ALERT_THRESHOLD_DAYS=2
-INACTIVITY_ALERT_REPEAT_HOURS=24
+# Supabase
+SUPABASE_URL=https://<project-id>.supabase.co
+SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+SUPABASE_JWT_SECRET=<jwt-secret>
 
 # Firebase
-FIREBASE_CREDENTIALS_PATH=/app/firebase-credentials.json
+FIREBASE_SERVER_KEY=<firebase-server-key>
+
+# Batch
+CRON_SECRET=<random-secret-for-pg-cron>
 ```
 
 ---
