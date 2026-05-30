@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "https://deno.land/std@0.208.0/http/server.ts": "./_mocks/server.ts"
+  },
+  "test": {
+    "include": ["."]
+  }
+}

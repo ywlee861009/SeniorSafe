@@ -2,12 +2,17 @@ import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const DEVICE_TOKEN_EXPIRE_DAYS = 365;
 
+let _mockToken: string | undefined = undefined;
+export function __setMockToken(token: string) { _mockToken = token; }
+export function __resetMockToken() { _mockToken = undefined; }
+
 /**
  * Create a custom JWT for device authentication.
  * Signed with Supabase JWT secret so PostgREST accepts it.
  * auth.uid() in RLS policies will return the device_id.
  */
 export async function createDeviceToken(deviceId: string): Promise<string> {
+  if (_mockToken !== undefined) return _mockToken;
   const secret = Deno.env.get("SUPABASE_JWT_SECRET")!;
   const key = await crypto.subtle.importKey(
     "raw",

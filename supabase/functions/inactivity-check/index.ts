@@ -11,7 +11,7 @@ import { getServiceClient } from "../_shared/supabase.ts";
  *
  * Requires FIREBASE_SERVER_KEY env var for FCM HTTP v1 API.
  */
-serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -48,6 +48,8 @@ serve(async (req) => {
       detail: string | null;
     }> = [];
 
+    let alertsDeduplicated = 0;
+
     for (const senior of seniors || []) {
       const lastActivity = new Date(senior.last_activity_at);
       const daysSince =
@@ -65,6 +67,26 @@ serve(async (req) => {
       if (!pairings || pairings.length === 0) continue;
 
       for (const pairing of pairings) {
+        // Deduplication: skip if we already sent an alert for the same
+        // last_activity_at (no new activity since last alert)
+        const { data: lastAlert } = await supabase
+          .from("inactivity_alerts")
+          .select("id, last_activity_at")
+          .eq("senior_device_id", senior.id)
+          .eq("guardian_device_id", pairing.guardian_device_id)
+          .eq("status", "sent")
+          .order("sent_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (
+          lastAlert &&
+          lastAlert.last_activity_at === senior.last_activity_at
+        ) {
+          alertsDeduplicated++;
+          continue;
+        }
+
         // Get guardian's FCM token
         const { data: guardian } = await supabase
           .from("devices")
@@ -113,6 +135,7 @@ serve(async (req) => {
         alerts_sent: alerts.filter((a) => a.status === "sent").length,
         alerts_skipped: alerts.filter((a) => a.status === "skipped").length,
         alerts_failed: alerts.filter((a) => a.status === "failed").length,
+        alerts_deduplicated: alertsDeduplicated,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
@@ -122,7 +145,9 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
-});
+};
+
+serve(handler);
 
 async function sendFcmNotification(
   fcmToken: string,

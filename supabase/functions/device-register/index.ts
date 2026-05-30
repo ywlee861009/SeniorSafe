@@ -12,7 +12,7 @@ function hashIdentifier(value: string): Promise<string> {
   );
 }
 
-serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -102,4 +102,6 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
-});
+};
+
+serve(handler);

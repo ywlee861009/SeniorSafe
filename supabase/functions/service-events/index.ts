@@ -3,6 +3,12 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { getDeviceFromRequest } from "../_shared/auth.ts";
 
+/**
+ * POST service-events
+ *
+ * Upload service lifecycle events (started, stopped, heartbeat, error).
+ * Any device can upload its own service events.
+ */
 export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -14,13 +20,6 @@ export const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    if (device.role !== "senior") {
-      return new Response(
-        JSON.stringify({ error: "Only senior devices can upload activity events" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -36,28 +35,16 @@ export const handler = async (req: Request): Promise<Response> => {
     const supabase = getServiceClient();
     const now = new Date().toISOString();
 
-    // Insert events
-    const rows = events.map((e: { occurred_at: string; source: string }) => ({
-      senior_device_id: device.id,
+    const rows = events.map((e: { event_type: string; occurred_at: string; detail?: string }) => ({
+      device_id: device.id,
+      event_type: e.event_type,
       occurred_at: e.occurred_at,
       received_at: now,
-      source: e.source,
+      detail: e.detail ?? null,
     }));
 
-    const { error } = await supabase.from("activity_events").insert(rows);
+    const { error } = await supabase.from("service_events").insert(rows);
     if (error) throw error;
-
-    // Update device last_activity_at to the most recent event
-    const latestOccurred = events.reduce(
-      (latest: string, e: { occurred_at: string }) =>
-        e.occurred_at > latest ? e.occurred_at : latest,
-      events[0].occurred_at,
-    );
-
-    await supabase
-      .from("devices")
-      .update({ last_activity_at: latestOccurred })
-      .eq("id", device.id);
 
     return new Response(
       JSON.stringify({ accepted: events.length }),

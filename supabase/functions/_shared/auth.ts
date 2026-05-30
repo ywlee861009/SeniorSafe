@@ -7,6 +7,10 @@ export interface DeviceInfo {
   display_name: string;
 }
 
+let _mockDevice: DeviceInfo | null | undefined = undefined;
+export function __setMockDevice(device: DeviceInfo | null) { _mockDevice = device; }
+export function __resetMockDevice() { _mockDevice = undefined; }
+
 /**
  * Extract and verify device from Authorization header.
  * Returns device info or null if unauthorized.
@@ -14,6 +18,7 @@ export interface DeviceInfo {
 export async function getDeviceFromRequest(
   req: Request,
 ): Promise<DeviceInfo | null> {
+  if (_mockDevice !== undefined) return _mockDevice;
   const authHeader = req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
 
