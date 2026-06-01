@@ -9,7 +9,13 @@ import { getServiceClient } from "../_shared/supabase.ts";
  * Finds seniors whose last_activity_at exceeds their inactivity_threshold_days,
  * then sends FCM push to their connected guardians.
  *
- * Requires FIREBASE_SERVER_KEY env var for FCM HTTP v1 API.
+ * FCM delivery (see sendFcmNotification):
+ *   - Primary: FCM HTTP v1 API via FIREBASE_SERVICE_ACCOUNT
+ *     (service account JSON string; OAuth2 / RS256).
+ *   - Fallback: legacy HTTP API via FIREBASE_SERVER_KEY.
+ *     NOTE: Google shut down the legacy FCM API in 2024 — this path is
+ *     effectively dead and kept only for backward compatibility / tests.
+ *     Configure FIREBASE_SERVICE_ACCOUNT for real delivery.
  */
 export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -149,12 +155,118 @@ export const handler = async (req: Request): Promise<Response> => {
 
 serve(handler);
 
+async function getGoogleAccessToken(
+  clientEmail: string,
+  privateKey: string,
+): Promise<string> {
+  const { create } = await import("https://deno.land/x/djwt@v3.0.2/mod.ts");
+
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  
+  let pemContents = privateKey;
+  if (privateKey.includes(pemHeader)) {
+    pemContents = privateKey.substring(
+      privateKey.indexOf(pemHeader) + pemHeader.length,
+      privateKey.indexOf(pemFooter),
+    );
+  }
+  
+  const cleanPem = pemContents.replace(/\s/g, "");
+  const binaryDer = Uint8Array.from(atob(cleanPem), (c) => c.charCodeAt(0));
+
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"],
+  );
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: clientEmail,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
+    iat: now,
+  };
+
+  const jwt = await create({ alg: "RS256", typ: "JWT" }, payload, key);
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to exchange Google OAuth2 token: ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
 async function sendFcmNotification(
   fcmToken: string,
   seniorName: string,
   days: number,
 ): Promise<boolean> {
+  const serviceAccountEnv = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
   const serverKey = Deno.env.get("FIREBASE_SERVER_KEY");
+
+  // 1. Try FCM HTTP v1 (OAuth 2.0)
+  if (serviceAccountEnv) {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountEnv);
+      const { client_email, private_key, project_id } = serviceAccount;
+
+      if (client_email && private_key && project_id) {
+        const accessToken = await getGoogleAccessToken(client_email, private_key);
+
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${project_id}/messages:send`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              message: {
+                token: fcmToken,
+                notification: {
+                  title: "안부 확인",
+                  body: `${seniorName}님의 휴대폰 사용 기록이 ${days}일째 확인되지 않습니다.`,
+                },
+                data: {
+                  type: "inactivity_alert",
+                  senior_name: seniorName,
+                  days_inactive: String(days),
+                },
+              },
+            }),
+          },
+        );
+
+        return response.ok;
+      }
+    } catch (err) {
+      console.error("FCM v1 failed, falling back to legacy:", err);
+    }
+  }
+
+  // 2. Legacy FCM Fallback
   if (!serverKey) return false;
 
   try {
@@ -178,7 +290,8 @@ async function sendFcmNotification(
       }),
     });
     return response.ok;
-  } catch {
+  } catch (err) {
+    console.error("Legacy FCM failed:", err);
     return false;
   }
 }
