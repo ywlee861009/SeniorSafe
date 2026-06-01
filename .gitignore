@@ -13,3 +13,9 @@ __pycache__/
 
 # Local AI tooling
 .antigravitycli/
+
+# Firebase Service Account Credentials
+*-firebase-adminsdk-*.json
+
+# Supabase CLI local cache
+supabase/.temp/
