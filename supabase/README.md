@@ -8,7 +8,8 @@ supabase/
 ├── .env.example                         # 환경변수 템플릿
 ├── migrations/
 │   ├── 20260527000001_initial_schema.sql   # 테이블 + RLS
-│   └── 20260527000002_cron_inactivity_check.sql  # 비활동 배치
+│   ├── 20260527000002_cron_inactivity_check.sql  # 비활동 배치
+│   └── 20260530000001_add_service_events.sql     # 서비스 이벤트
 └── functions/
     ├── _shared/                          # 공통 유틸리티
     │   ├── cors.ts
@@ -22,6 +23,10 @@ supabase/
     ├── pairing-disconnect/               # POST - 페어링 해제
     ├── pairings-list/                    # GET - 페어링 목록 조회
     ├── activity-events/                  # POST - 활동 이벤트 업로드 (senior)
+    ├── activity-events-list/             # GET - 활동 이벤트 조회
+    ├── service-events/                   # POST - 서비스 이벤트 업로드
+    ├── service-events-list/              # GET - 서비스 이벤트 조회
+    ├── inactivity-alerts-list/           # GET - 미사용 알림 이력 조회
     └── inactivity-check/                 # POST - 비활동 배치 (cron)
 ```
 
@@ -37,6 +42,10 @@ supabase/
 | `GET /pairings` | `/functions/v1/pairings-list` | GET |
 | `DELETE /pairings/{id}` | `/functions/v1/pairing-disconnect` | POST |
 | `POST /activity/events` | `/functions/v1/activity-events` | POST |
+| `GET /activity/events/{senior}` | `/functions/v1/activity-events-list` | GET |
+| `POST /activity/service-events` | `/functions/v1/service-events` | POST |
+| `GET /activity/service-events/{device}` | `/functions/v1/service-events-list` | GET |
+| `GET /activity/inactivity-alerts/{senior}` | `/functions/v1/inactivity-alerts-list` | GET |
 | (배치) | `/functions/v1/inactivity-check` | POST |
 
 ## 설정 방법
@@ -74,6 +83,10 @@ supabase functions deploy pairing-claim
 supabase functions deploy pairing-disconnect
 supabase functions deploy pairings-list
 supabase functions deploy activity-events
+supabase functions deploy activity-events-list
+supabase functions deploy service-events
+supabase functions deploy service-events-list
+supabase functions deploy inactivity-alerts-list
 supabase functions deploy inactivity-check
 ```
 

@@ -10,7 +10,7 @@ P0
 
 이 기능은 센서 알고리즘보다 기술 리스크가 낮고, 서비스 실행 내역과 잠금해제 내역을 DB에 남기면 실제 기기 동작을 검증하기 쉽다.
 
-2026-05-20 현재 문서 계약은 범용 활동 이벤트 API인 `POST /activity/events`를 기준으로 한다. Android 로컬 Room 테이블 이름은 `unlock_events`지만 실제로는 `user_present`, `power_connected`, `power_disconnected`를 모두 저장하므로, 서버 모델/API 명칭은 `ActivityEvent`와 `last_activity_at`으로 맞춘다.
+2026-06-01 현재 백엔드는 범용 활동 이벤트 Edge Function인 `activity-events`를 구현했다. Android 로컬 Room 테이블 이름은 `unlock_events`지만 실제로는 `user_present`, `power_connected`, `power_disconnected`를 모두 저장하므로, 서버 모델/API 명칭은 `ActivityEvent`와 `last_activity_at`으로 맞춘다. 남은 핵심은 Android 로컬 이벤트를 Supabase 배치 요청(`{ "events": [...] }`)으로 업로드하고 성공 시 로컬 `uploaded` 상태를 갱신하는 것이다.
 
 ## 선행 완료 사항
 
@@ -38,15 +38,16 @@ P0
   - ✅ 중복 발송 방지 (last_activity_at 변경 없으면 스킵)
   - ✅ FCM 성공/실패/스킵 로그 저장
 - ✅ Supabase Migrations 3개 작성
-- ✅ Deno 테스트 52개 통과 (권한, 기록, 배치, 중복 방지 검증)
+- ✅ Deno 테스트 스위트 작성 (권한, 기록, 배치, 중복 방지 검증)
 
 ### Android
 
 - 기존 `core:activity` 로컬 기록을 백엔드 API와 연결:
-  - 잠금해제/충전 이벤트 백엔드 `POST /activity/events` 업로드
-  - 서비스 이벤트 백엔드 `POST /activity/service-events` 업로드
+  - 잠금해제/충전 이벤트 백엔드 `POST /functions/v1/activity-events` 업로드
+  - 서비스 이벤트 백엔드 `POST /functions/v1/service-events` 업로드
   - 네트워크 실패 시 미전송 이벤트 보관 및 재시도
   - 업로드 성공 시 로컬 `uploaded` 상태 갱신
+  - `ServiceEventDao`에도 pending upload 조회와 mark uploaded API 추가
 - 활동 모니터링 foreground service 보강:
   - heartbeat/error 로컬 기록 누락 여부 점검
   - 주요 서비스 이벤트 백엔드 업로드

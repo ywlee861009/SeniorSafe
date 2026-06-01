@@ -24,7 +24,8 @@ P1
 - Edge Function 로그 모니터링 설정
 - Firebase Server Key → FCM HTTP v1 API 마이그레이션 검토
 - Rate limiting 정책 추가 (Supabase Edge Functions 레벨)
-- Android `BASE_URL` 전환 (`10.0.2.2:8000` → Supabase URL)
+- Android `ANBU_API_BASE_URL` 기본값 전환 (`10.0.2.2:8000` → 로컬 Supabase `10.0.2.2:54321/functions/v1/` 또는 프로덕션 Supabase URL)
+- `NetworkModule`의 `FakeApiService` 주입을 실제 Retrofit provider로 전환하거나 빌드 타입별 fake/real 주입 정책 문서화
 
 ## 완료 조건
 

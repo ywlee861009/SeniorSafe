@@ -371,6 +371,7 @@ pg_cron이 매일 00:00 UTC에 자동 실행한다. 수동 실행도 가능.
   "limit": 50,
   "offset": 0
 }
+```
 
 ## Deferred: Fall
 

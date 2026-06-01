@@ -8,10 +8,11 @@ P2
 
 가속도 센서 기반 낙상 감지 상태 머신은 구현되어 있지만, 현재 threshold와 시간값은 실제 생활 움직임 기준으로 충분히 검증되지 않았다. 오탐과 미탐 모두 제품 신뢰도에 직접 영향을 주므로 현재 MVP에서는 낙상 감지 제품화를 보류한다.
 
-2026-05-20 현재 Android MVP에는 활동 모니터링과 진단 로그 기반이 추가되어 있지만, 낙상 감지 제품 기능은 일반 앱 흐름에서 제외되어야 한다.
+2026-06-01 현재 Android MVP에는 활동 모니터링과 진단 로그 기반이 추가되어 있지만, 낙상 감지 제품 기능은 일반 앱 흐름에서 제외되어야 한다.
 
-- `core:fall-detection` 모듈은 settings에 포함되어 있으나 현재 APK 의존성 그래프에서 일반 MVP 기능으로 연결되어 있지 않다.
-- `feature/senior/src/.../service/FallDetectionService` 계열 코드도 일반 사용자 호출 트리거가 없다.
+- 현재 저장소의 `android/settings.gradle.kts`에는 `core:fall-detection` 모듈이 포함되어 있지 않다.
+- 현재 파일 트리에도 `FallDetectionService` 구현은 확인되지 않는다.
+- 낙상 감지 관련 완료 티켓은 과거 피벗 전 기록으로 남아 있다.
 - MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB에 저장된다.
 - 현재 제품화 대상 서비스는 `core:activity`의 활동 모니터링 foreground service다.
 
@@ -39,7 +40,7 @@ P2
 ## 완료 조건
 
 - 낙상 감지가 현재 MVP 범위에서 비활성/숨김 처리되어 있다.
-- APK에 포함할 코드와 보관만 할 코드를 명확히 분리하고, dead code 여부를 문서화한다.
+- APK에 포함된 코드와 과거 티켓/문서에만 남은 기록을 명확히 분리하고, dead code 여부를 문서화한다.
 - threshold 선택 이유가 테스트 데이터와 함께 문서화된다.
 - 주요 오탐 케이스의 기대 동작이 정리된다.
 - cooldown 동안 중복 알림이 방지된다.

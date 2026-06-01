@@ -49,7 +49,7 @@ supabase secrets set CRON_SECRET=<random-secret>
 - 매일 00:00 UTC (09:00 KST)에 `inactivity-check` Edge Function 호출
 - `CRON_SECRET`으로 인증
 
-pg_cron은 Supabase Pro 플랜에서 사용 가능. Free 플랜에서는 외부 스케줄러(GitHub Actions, cron-job.org 등)로 대체:
+pg_cron 사용 가능 여부는 Supabase 플랜과 프로젝트 설정에 따라 확인한다. 사용할 수 없는 환경에서는 외부 스케줄러(GitHub Actions, cron-job.org 등)로 대체:
 
 ```bash
 curl -X POST https://<project-id>.supabase.co/functions/v1/inactivity-check \
@@ -83,16 +83,16 @@ cd supabase/functions && deno test --config=tests/deno.json tests/ --allow-env -
 
 ## Android 연결
 
-Android 앱의 `BASE_URL`을 Supabase Edge Functions URL로 설정:
+Android 앱의 `ANBU_API_BASE_URL`을 Supabase Edge Functions URL로 설정한다. 현재 `NetworkModule`은 Retrofit 대신 `FakeApiService`를 주입하고 있으므로, 실제 서버 연결 작업에서는 `BuildConfig.ANBU_API_BASE_URL` 기반 Retrofit provider와 Edge Function 경로 매핑을 함께 복구해야 한다.
 
 ```kotlin
-// core/network/NetworkModule.kt
-const val BASE_URL = "https://<project-id>.supabase.co/functions/v1/"
+// android/gradle.properties 또는 빌드 variant별 설정
+ANBU_API_BASE_URL=https://<project-id>.supabase.co/functions/v1/
 ```
 
 로컬 개발 시:
 ```kotlin
-const val BASE_URL = "http://10.0.2.2:54321/functions/v1/"
+ANBU_API_BASE_URL=http://10.0.2.2:54321/functions/v1/
 ```
 
 ## Follow-up Production Tasks
