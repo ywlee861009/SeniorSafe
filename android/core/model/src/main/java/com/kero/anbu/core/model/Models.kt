@@ -81,6 +81,10 @@ data class PairingItem(
 
 data class PairingListResponse(val pairings: List<PairingItem>)
 
+data class DisconnectPairingRequest(
+    @SerializedName("pairing_id") val pairingId: String
+)
+
 data class DisconnectPairingResponse(
     @SerializedName("pairing_id") val pairingId: String,
     val active: Boolean

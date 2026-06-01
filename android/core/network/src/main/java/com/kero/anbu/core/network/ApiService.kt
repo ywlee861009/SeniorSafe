@@ -3,48 +3,61 @@ package com.kero.anbu.core.network
 import com.kero.anbu.core.model.*
 import retrofit2.http.*
 
+/**
+ * Supabase Edge Functions client.
+ *
+ * Base URL is the Functions root: https://<project>.supabase.co/functions/v1/
+ * Each path below is an Edge Function name (kebab-case). Endpoints that hit
+ * PostgREST instead use an absolute path (leading "/") to bypass the Functions
+ * prefix. See docs/api-spec.md for the full contract.
+ */
 interface ApiService {
-    @GET("health")
-    suspend fun health(): HealthResponse
-
-    @POST("devices/register")
+    @POST("device-register")
     suspend fun registerDevice(@Body request: DeviceRegisterRequest): DeviceRegisterResponse
 
-    @GET("devices/me")
+    // Current device profile via PostgREST (RLS returns only the caller's device).
+    // Absolute path keeps the host but drops the /functions/v1 prefix.
+    // NOTE: PostgREST returns an array; not currently called from UI.
+    @GET("/rest/v1/devices")
     suspend fun getCurrentDevice(): DeviceMeResponse
 
-    @PUT("devices/fcm-token")
+    @PUT("fcm-token")
     suspend fun updateFcmToken(@Body request: FcmTokenRequest): MessageResponse
 
-    @POST("pairing/codes")
+    @POST("pairing-codes")
     suspend fun createPairingCode(): PairingCodeResponse
 
-    @POST("pairings")
+    @POST("pairing-claim")
     suspend fun claimPairingCode(@Body request: ClaimPairingRequest): ClaimPairingResponse
 
-    @GET("pairings")
+    @GET("pairings-list")
     suspend fun getPairingList(): PairingListResponse
 
-    @DELETE("pairings/{pairingId}")
-    suspend fun disconnectPairing(@Path("pairingId") pairingId: String): DisconnectPairingResponse
+    @POST("pairing-disconnect")
+    suspend fun disconnectPairing(@Body request: DisconnectPairingRequest): DisconnectPairingResponse
 
-    @POST("activity/events")
+    // TODO(ticket-004): backend `activity-events` expects a batch body
+    // {events:[...]} and returns {accepted:N}. Align ActivityEventRequest/Response
+    // to the batch contract when wiring senior activity upload. No caller yet.
+    @POST("activity-events")
     suspend fun recordActivityEvent(@Body request: ActivityEventRequest): ActivityEventResponse
 
-    @GET("activity/events/{seniorDeviceId}")
+    @GET("activity-events-list")
     suspend fun getActivityEvents(
-        @Path("seniorDeviceId") seniorDeviceId: String,
+        @Query("senior_device_id") seniorDeviceId: String,
         @Query("limit") limit: Int = 50
     ): ActivityEventsResponse
 
-    @POST("activity/service-events")
+    // TODO(ticket-004): backend `service-events` expects a batch body
+    // {events:[...]} and returns {accepted:N}. No caller yet.
+    @POST("service-events")
     suspend fun recordServiceEvent(@Body request: ServiceEventRequest): ServiceEventResponse
 
-    @GET("activity/service-events/{deviceId}")
-    suspend fun getServiceEvents(@Path("deviceId") deviceId: String): ServiceEventsResponse
+    @GET("service-events-list")
+    suspend fun getServiceEvents(@Query("device_id") deviceId: String): ServiceEventsResponse
 
-    @GET("activity/inactivity-alerts/{seniorDeviceId}")
+    @GET("inactivity-alerts-list")
     suspend fun getInactivityAlerts(
-        @Path("seniorDeviceId") seniorDeviceId: String
+        @Query("senior_device_id") seniorDeviceId: String
     ): InactivityAlertsResponse
 }

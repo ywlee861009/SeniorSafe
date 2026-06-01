@@ -2,7 +2,7 @@ package com.kero.anbu.core.network.di
 
 import com.kero.anbu.core.datastore.TokenDataStore
 import com.kero.anbu.core.network.ApiService
-import com.kero.anbu.core.network.FakeApiService
+import com.kero.anbu.core.network.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,6 +10,8 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -42,6 +44,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideApiService(fakeApiService: FakeApiService): ApiService =
-        fakeApiService
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit =
+        Retrofit.Builder()
+            // BuildConfig.ANBU_API_BASE_URL must point at the Supabase
+            // Edge Functions base, e.g. https://<project>.supabase.co/functions/v1/
+            // (trailing slash required for relative paths in ApiService).
+            .baseUrl(BuildConfig.ANBU_API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideApiService(retrofit: Retrofit): ApiService =
+        retrofit.create(ApiService::class.java)
 }

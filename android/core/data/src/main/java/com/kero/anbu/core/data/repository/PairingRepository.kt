@@ -19,5 +19,5 @@ class PairingRepository @Inject constructor(
         api.getPairingList().pairings
 
     suspend fun disconnectPairing(pairingId: String): DisconnectPairingResponse =
-        api.disconnectPairing(pairingId)
+        api.disconnectPairing(DisconnectPairingRequest(pairingId))
 }
