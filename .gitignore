@@ -3,3 +3,10 @@
 !.env.example
 .DS_Store
 Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
