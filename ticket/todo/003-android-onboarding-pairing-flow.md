@@ -4,6 +4,19 @@
 
 P0
 
+## 진행 현황 (2026-06-01)
+
+네트워크 연동의 핵심 블로커가 해소되었다. 잔여는 실기기 흐름 검증과 dead route 정리.
+
+- ✅ `NetworkModule`에 실제 Retrofit + GsonConverterFactory provider 구성, `FakeApiService` 주입 제거 및 파일 삭제
+- ✅ `BuildConfig.ANBU_API_BASE_URL`을 Retrofit `baseUrl`에 연결, 기본값을 `http://10.0.2.2:54321/functions/v1/`로 정정
+- ✅ `ApiService` 경로를 실제 Edge Function 이름으로 정렬 (`device-register`, `fcm-token`, `pairing-codes`, `pairing-claim`, `pairings-list`, `pairing-disconnect` 등)
+- ✅ disconnect를 `POST pairing-disconnect` + `DisconnectPairingRequest(pairing_id)` body로 정정, 목록 API를 query 파라미터로 정정
+- ✅ 기존 device-token OkHttp interceptor / `TokenDataStore` 저장 경계는 그대로 재사용 (이미 구현되어 있었음)
+- ⬜ (잔여) 실제 백엔드 기준 페어링 성공/실패·만료·재사용 상태 표시, 앱 재실행 시 홈 진입 검증
+- ⬜ (잔여) login/register/MVP 대시보드 dead route 정리 (`ticket/todo/008`과 연계)
+- ⬜ (잔여) `google-services.json` 배치 + 실 프로젝트 URL 설정 후 실기기 검증 (`ticket/todo/005`)
+
 ## 문제
 
 Android 앱의 로컬 역할 선택/어르신 목업 페어링 UI는 구현됐다. 남은 작업은 서버 기기 등록 API와 실제 페어링 API를 연결하고, 보호자 코드 입력 플로우와 실패 상태를 새 device/pairing 계약 기준으로 완성하는 것이다.

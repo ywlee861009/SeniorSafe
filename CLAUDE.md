@@ -103,7 +103,7 @@ supabase/
 - RLS가 DB 레이어에서 보안 강제 (5개 테이블 적용)
 - 사용자 계정/Supabase Auth 로그인은 MVP 범위가 아니다
 
-> **Android 구현 현황**: device_access_token 발급/저장/주입 로직 미구현. 현재 `TokenDataStore`는 user JWT용이며, 각 Repository가 `tokenDataStore.getAccessToken()`을 호출 사이트별로 수동 주입한다. OkHttp Interceptor 없음. device token Interceptor 통일은 `ticket/todo/006` 참고.
+> **Android 구현 현황** (2026-06-01): device_access_token 발급/저장/주입 경계 구현됨. `device-register` 응답 토큰을 `TokenDataStore.saveDeviceAuth()`로 저장하고, `NetworkModule`의 OkHttp Interceptor가 `getDeviceAccessToken()`을 `Authorization: Bearer`로 주입한다. `NetworkModule`은 실제 Retrofit을 `ApiService`로 제공하며(`FakeApiService` 삭제), `ApiService` 경로는 실제 Edge Function 이름과 일치한다. 잔여: `google-services.json` 배치, 실 프로젝트 base URL, 어르신 활동 업로드 배치 계약(`ticket/todo/004`), 실기기 E2E(`ticket/todo/005`).
 
 ### Edge Function 구현 상태
 
@@ -198,8 +198,8 @@ core/* → core/* (순환 금지)
 ACTION_USER_PRESENT / POWER_CONNECTED / POWER_DISCONNECTED
   → ActivityRepository.recordUnlock(now, source)
   → Room unlock_events 테이블 insert (uploaded=false)
-  → [미구현] 백엔드 POST /activity/events 업로드 및 재전송
-  (Room DAO에 getPendingUpload/markUploaded 정의 있으나 호출자 없음)
+  → [미구현] 백엔드 POST activity-events(배치 {events:[...]}) 업로드 및 재전송
+  (Room DAO에 getPendingUpload/markUploaded 정의 있으나 호출자 없음. ApiService.recordActivityEvent는 경로만 정렬, 배치 DTO 정렬은 ticket/todo/004)
 ```
 
 서비스 실행 내역:
@@ -207,7 +207,7 @@ ACTION_USER_PRESENT / POWER_CONNECTED / POWER_DISCONNECTED
 ```text
 ActivityMonitorService
   → started / stopped / heartbeat / error 로컬 기록 (Room service_events + DiagnosticsLogStore)
-  → [미구현] 백엔드 POST /activity/service-events 업로드
+  → [미구현] 백엔드 POST service-events(배치 {events:[...]}) 업로드
 ```
 
 ### 네이밍

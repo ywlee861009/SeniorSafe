@@ -4,6 +4,17 @@
 
 P0
 
+## 진행 현황 (2026-06-01)
+
+백엔드는 전부 완료. 보호자 FCM 수신 경로도 코드상 연결됨. 잔여는 어르신 활동 업로드(배치 계약).
+
+- ✅ `inactivity-check`가 FCM HTTP v1(OAuth2, `FIREBASE_SERVICE_ACCOUNT`)로 발송하도록 적용 (legacy는 fallback)
+- ✅ `GuardianFcmService` 수신/표시 + 보호자 홈 `POST_NOTIFICATIONS` 권한 요청 추가 — 보호자 미사용 알림 수신 경로 코드 완비
+- ⬜ (잔여) 어르신 활동 이벤트 업로드: `ApiService.recordActivityEvent`/`recordServiceEvent`는 경로만 정렬했고, 백엔드 배치 계약(`{events:[...]}` → `{accepted}`)에 맞게 DTO/Repository를 정렬해야 함 (현재 단건 모델, 호출자 없음, `TODO(ticket-004)` 표시)
+- ⬜ (잔여) `ActivityRepository` 업로드 worker/retry, `uploaded` 상태 갱신, `ServiceEventDao` pending upload API
+- ⬜ (잔여) 보호자 홈 마지막 활동 시각 실데이터 연결, 미사용 알림 이력 화면
+- 참고: 실기기 E2E는 어르신 `last_activity_at`을 수동 세팅하면 활동 업로드 없이도 푸시 경로 검증 가능
+
 ## 문제
 
 낙상 감지 기능은 MVP 제품화 범위에서 잠시 보류한다. 대신 어르신 휴대폰이 N일 동안 잠금해제되지 않으면 보호자에게 안부 확인 푸시를 보내는 기능을 MVP 핵심으로 구현한다.
