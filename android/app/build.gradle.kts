@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.anbu.android.application)
     alias(libs.plugins.anbu.android.compose)
     alias(libs.plugins.anbu.android.hilt)
-    // google-services: Firebase 콘솔에서 google-services.json 발급 후 주석 해제
-    // alias(libs.plugins.google.services)
+    // google-services: requires android/app/google-services.json (git-ignored).
+    alias(libs.plugins.google.services)
 }
 
 android {
