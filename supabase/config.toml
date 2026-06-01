@@ -28,3 +28,9 @@ enabled = false
 
 [auth.external.email]
 enabled = false
+
+[functions.device-register]
+verify_jwt = false
+
+[functions.inactivity-check]
+verify_jwt = false
