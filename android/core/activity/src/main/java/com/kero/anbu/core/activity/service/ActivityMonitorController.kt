@@ -28,6 +28,7 @@ class ActivityMonitorController @Inject constructor(
         }
         if (heartbeatFresh) {
             log("ensure skipped — heartbeat fresh; reason=$reason")
+            ActivityUploadWorker.enqueuePeriodic(context)
             return
         }
         if (heartbeatStale) {
@@ -55,6 +56,8 @@ class ActivityMonitorController @Inject constructor(
     fun startByUser(reason: String) {
         stateStore.markUserStarted(reason)
         log("user start requested; reason=$reason")
+        ActivityUploadWorker.enqueuePeriodic(context)
+        ActivityUploadWorker.enqueueImmediate(context)
         startService(reason)
     }
 
@@ -66,12 +69,14 @@ class ActivityMonitorController @Inject constructor(
 
     fun refresh(reason: String) {
         stateStore.refresh(reason)
+        ActivityUploadWorker.enqueuePeriodic(context)
         restartIfStale(reason)
     }
 
     private fun startService(reason: String) {
         log("→ calling startForegroundService; reason=$reason")
         try {
+            ActivityUploadWorker.enqueuePeriodic(context)
             ActivityMonitorService.start(context)
             log("→ startForegroundService dispatched OK; reason=$reason")
         } catch (e: Exception) {

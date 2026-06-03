@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kero.anbu.core.model.InactivityAlertItem
 import com.kero.anbu.core.model.PairingItem
 import com.kero.anbu.core.ui.theme.Neutral400
 import com.kero.anbu.core.ui.theme.Neutral600
@@ -32,6 +33,7 @@ import com.kero.anbu.core.ui.theme.Success500
 @Composable
 fun GuardianHomeScreen(
     onNavigateToConnect: () -> Unit,
+    onNavigateToAlerts: (PairingItem) -> Unit,
     viewModel: GuardianHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -80,7 +82,32 @@ fun GuardianHomeScreen(
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
             items(uiState.pairings) { item ->
-                SeniorCard(item = item)
+                SeniorCard(
+                    item = item,
+                    latestAlert = item.seniorDeviceId?.let { uiState.latestAlertsBySeniorId[it] },
+                    onClick = { onNavigateToAlerts(item) }
+                )
+            }
+            if (uiState.isLoading) {
+                item {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+            uiState.error?.let { message ->
+                item {
+                    Text(
+                        text = "연결 정보를 불러오지 못했습니다: $message",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
             }
             if (uiState.pairings.isEmpty() && !uiState.isLoading) {
                 item {
@@ -93,11 +120,17 @@ fun GuardianHomeScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SeniorCard(item: PairingItem) {
+private fun SeniorCard(
+    item: PairingItem,
+    latestAlert: InactivityAlertItem?,
+    onClick: () -> Unit
+) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(1.dp),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -133,12 +166,26 @@ private fun SeniorCard(item: PairingItem) {
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text     = if (item.lastActivityAt != null) "마지막 사용 기록: ${item.lastActivityAt}" else "마지막 사용 기록: 없음",
+                    text     = "마지막 사용 기록: ${item.lastActivityAt.toDisplayTimeOrNone()}",
                     fontSize = 12.sp,
                     color    = Neutral400
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = latestAlert?.toSummaryText()
+                        ?: "최근 미사용 알림: 없음",
+                    fontSize = 12.sp,
+                    color = if (latestAlert?.status == "failed") {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        Neutral400
+                    }
                 )
             }
             Text("›", fontSize = 22.sp, color = Neutral400)
         }
     }
 }
+
+private fun InactivityAlertItem.toSummaryText(): String =
+    "최근 미사용 알림: ${sentAt.toDisplayTime()} · ${status.toKoreanAlertStatus()} · ${thresholdDays}일 기준"

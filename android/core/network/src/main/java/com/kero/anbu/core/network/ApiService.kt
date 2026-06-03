@@ -53,6 +53,8 @@ interface ApiService {
 
     @GET("inactivity-alerts-list")
     suspend fun getInactivityAlerts(
-        @Query("senior_device_id") seniorDeviceId: String
+        @Query("senior_device_id") seniorDeviceId: String,
+        @Query("limit") limit: Int = 50,
+        @Query("offset") offset: Int = 0
     ): InactivityAlertsResponse
 }

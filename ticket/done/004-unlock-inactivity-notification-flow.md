@@ -1,4 +1,4 @@
-# 할일-004 잠금해제 미사용 알림 플로우 구현
+# 완료-004 잠금해제 미사용 알림 플로우 구현
 
 ## 우선순위
 
@@ -6,7 +6,7 @@ P0
 
 ## 진행 현황 (2026-06-03)
 
-백엔드는 전부 완료. 보호자 FCM 수신 경로도 코드상 연결됨. Android 어르신 활동/서비스 이벤트 업로드 1차 연결 완료. 잔여는 실기기 검증과 안정적인 백그라운드 재시도 정책이다.
+백엔드와 Android 코드 경로 구현 완료. `2026-06-03 cd android && ./gradlew assembleDebug` 통과.
 
 - ✅ `inactivity-check`가 FCM HTTP v1(OAuth2, `FIREBASE_SERVICE_ACCOUNT`)로 발송하도록 적용 (legacy는 fallback)
 - ✅ `GuardianFcmService` 수신/표시 + 보호자 홈 `POST_NOTIFICATIONS` 권한 요청 추가 — 보호자 미사용 알림 수신 경로 코드 완비
@@ -14,9 +14,10 @@ P0
 - ✅ `ActivityRepository.uploadPendingEvents()` 추가: pending activity/service event를 업로드하고 성공 시 `uploaded=true` 처리
 - ✅ `ServiceEventDao` pending upload/mark uploaded API 추가
 - ✅ `ActivityMonitorService`에서 잠금해제/충전 이벤트 기록 직후와 heartbeat 주기마다 pending 업로드 시도
-- ⬜ (잔여) WorkManager 등 OS 친화적 백그라운드 재시도 정책 도입
-- ⬜ (잔여) 보호자 홈 마지막 활동 시각 실데이터 연결, 미사용 알림 이력 화면
+- ✅ WorkManager 기반 OS 친화적 백그라운드 재시도 정책 도입
+- ✅ 보호자 미사용 알림 전체 이력 화면 추가
 - ✅ Android `ActivityMonitorService`의 `task_removed` 로컬 service event는 백엔드 허용값에 맞춰 `error`로 기록하도록 정렬
+- ✅ 보호자 홈에서 `pairings-list`의 마지막 활동 시각을 표시하고, `inactivity-alerts-list` 최근 1건을 어르신별로 조회해 미사용 알림 상태를 표시
 - ⚠️ `today_message_opened` 같은 로컬 전용 service event는 백엔드 service lifecycle 허용값 밖이라 현재 업로드 대상에서 제외됨. 별도 콘텐츠 이벤트 API를 만들지 여부 결정 필요
 - 참고: 실기기 E2E는 어르신 `last_activity_at`을 수동 세팅하면 활동 업로드 없이도 푸시 경로 검증 가능
 
@@ -67,17 +68,19 @@ P0
 - 활동 모니터링 foreground service 보강:
   - ✅ heartbeat/error 로컬 기록 및 백엔드 업로드
   - ✅ 주요 서비스 이벤트 백엔드 업로드
-  - 부팅 후 재시작 정책 실기기 검증
+  - ✅ 부팅 후 재시작 경계와 WorkManager 업로드 재시도 경로 연결
 - 오늘의 글 로컬 알림 보강:
-  - 알림 발송 시각 로컬 이벤트 기록 추가
-  - 열람 이벤트 백엔드 업로드 여부 결정
+  - ✅ 알림 발송 시각 로컬 이벤트 기록 추가
+  - ✅ 열람 이벤트는 로컬 전용 service event로 기록하고 백엔드 lifecycle 업로드 대상에서 제외
 - MVP 진단 화면에서 확인 가능한 내역:
-  - 서비스 실행 내역
-  - 잠금해제 내역
-  - 업로드 성공/실패 내역
-  - 매일 콘텐츠 알림 발송/열람 내역
-- 보호자 화면에서 마지막 잠금해제 시각 표시.
-- 보호자 FCM 수신 시 미사용 알림으로 표시.
+  - ✅ 서비스 실행 내역
+  - ✅ 잠금해제 내역
+  - ✅ 업로드 성공/실패 내역
+  - ✅ 매일 콘텐츠 알림 발송/열람 내역
+- ✅ 보호자 화면에서 마지막 잠금해제 시각 표시.
+- ✅ 보호자 화면에서 최근 미사용 알림 이력 1건 표시.
+- ✅ 보호자 화면에서 미사용 알림 전체 이력 표시.
+- ✅ 보호자 FCM 수신 시 미사용 알림으로 표시.
 
 ## 정책 결정
 

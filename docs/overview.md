@@ -127,20 +127,19 @@ Firebase FCM
 - `NetworkModule`이 실제 Retrofit + GsonConverterFactory를 주입하고 `BuildConfig.ANBU_API_BASE_URL`을 Supabase Functions base URL로 사용
 - `ApiService`의 device/pairing/FCM 경로가 실제 Edge Function 이름과 일치
 - 어르신 연결 코드 생성과 보호자 코드 입력이 `pairing-codes`, `pairing-claim`, `pairings-list` API 경계로 연결
-- `ActivityMonitorService`: 잠금해제·충전 이벤트 감지 → `unlock_events` Room 저장
+- `ActivityMonitorService`: 잠금해제·충전 이벤트 감지 → `unlock_events` Room 저장 → `activity-events` 업로드
+- 서비스 lifecycle 이벤트 Room 저장 및 백엔드 허용 이벤트(`started`, `stopped`, `heartbeat`, `error`) 업로드
+- WorkManager 기반 네트워크 연결 시 pending activity/service event 백그라운드 재시도
 - 서비스 다층 생존(foreground + WakeLock + START_STICKY + `onTaskRemoved` AlarmManager 재예약 + BootReceiver + 3분 stale 자동 복구)
 - 서비스 생존 상태 heartbeat → `ActivityServiceStateStore` (SharedPreferences `last_heartbeat_at`)
 - MVP 디버깅 대시보드 (`feature/mvp` — 개발자 진입용, 일반 startDestination 분기 없음)
 - 매일 20시 오늘의 글 로컬 알림 (`AlarmManager.setInexactRepeating`)
 - MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB(`seniorsafe_diagnostics.db`)에 저장
 - `GuardianFcmService`가 FCM 수신 및 token refresh 시 `DeviceRepository.updateFcmToken()` 호출
+- 보호자 홈에서 마지막 활동 시각, 최근 미사용 알림, 전체 미사용 알림 이력 표시
 
 **미구현/잔여:**
-- 활동 이벤트 백엔드 업로드 호출자 없음. 현재 Android DTO도 백엔드 배치 계약(`{ "events": [...] }` → `{ "accepted": N }`)과 다름
-- 서비스 이벤트 백엔드 업로드 호출자 없음. 현재 Android DTO도 백엔드 배치 계약과 다름
-- 미전송 이벤트 재전송 루프 없음 (`UnlockEventDao`에만 `getPendingUpload`/`markUploaded` 존재, 서비스 이벤트 DAO에는 업로드 상태 처리 없음)
 - 실제 FCM 실기기 검증 미완료 (`google-services` plugin 활성화 및 로컬 `android/app/google-services.json` 배치 완료, 파일은 gitignore 대상)
-- 보호자 미사용 알림 탭 시 상세 화면 라우팅 없음
 
 **기타:**
 - 현재 저장소에는 `core:fall-detection` 모듈이 존재하지 않는다. 낙상 감지 완료 티켓은 과거 기록으로만 남아 있으며 일반 MVP 앱 흐름에는 낙상 기능 진입점이 없다. 정리 대상: `ticket/todo/008`
@@ -155,11 +154,11 @@ Firebase FCM
 - 활동 모니터링 Foreground Service 실행 (서비스 생존 다층 방어)
 - 서비스 시작/중지/heartbeat/오류 내역을 로컬 DB에 기록
 - 활동 이벤트(잠금해제, 충전기 연결/해제)를 로컬 DB에 기록
+- 활동/서비스 이벤트 백엔드 업로드 및 WorkManager 재전송
 - 매일 저녁 8시 "오늘의 글" 로컬 푸시 발송·열람 기록
 
 미구현:
 - 실기기 기준 기기 등록/페어링 성공·실패·만료·재사용 상태 검증
-- 활동 이벤트 백엔드 업로드 및 재전송
 
 ### 보호자 앱
 
@@ -167,11 +166,11 @@ Firebase FCM
 - 역할 선택 → 보호자 홈 진입
 - 연결 코드 입력 UI 및 실제 `pairing-claim` repository/API 경계
 - 연결된 어르신 목록 조회 UI 및 실제 `pairings-list` repository/API 경계
+- 연결된 어르신의 마지막 활동 시각, 최근 미사용 알림, 전체 미사용 알림 이력 조회
 - FCM service 수신/표시 및 token refresh hook
 
 미구현:
 - 연결 해제 버튼/플로우
-- 어르신별 미사용 알림 이력 화면
 - N일 미사용 FCM 실기기 수신 검증
 
 ### 백엔드 API 및 배치 (Supabase Edge Functions)
@@ -219,7 +218,7 @@ Firebase FCM
  │  (잠금해제/충전 연결/해제) │
  ├─ 로컬 DB 기록            │
  ├─ Room unlock_events insert
- ├─ [Android 미연결] POST /functions/v1/activity-events ──▶
+ ├─ POST /functions/v1/activity-events ──▶
  │                         ├─ ActivityEvent 저장
  │                         └─ Device.last_activity_at 갱신
 ```

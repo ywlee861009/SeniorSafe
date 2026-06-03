@@ -66,8 +66,9 @@ Android는 사용자 흐름과 로컬 활동 기록이 상당 부분 구현되�
 - ✅ (해소) Android activity/service upload DTO가 백엔드 배치 계약(`{ "events": [...] }` → `{ "accepted": N }`)과 일치
 - ✅ (해소) `ActivityRepository.uploadPendingEvents()`가 pending activity/service event 업로드와 `uploaded=true` 갱신 수행
 - ✅ (해소) `ServiceEventDao`에 pending upload/mark uploaded API 추가
-- (잔여) WorkManager 등 OS 친화적 백그라운드 재시도 정책 없음. 현재는 이벤트 기록 직후와 heartbeat 주기마다 재시도
-- (잔여) 보호자 홈은 마지막 활동 시각을 표시하지만 연결 해제/알림 이력/상세 화면 없음
+- ✅ (해소) WorkManager 기반 네트워크 연결 시 pending activity/service event 백그라운드 재시도 추가
+- ✅ (해소) 보호자 홈에서 최근 알림과 전체 미사용 알림 이력 화면 제공
+- (잔여) 보호자 연결 해제 버튼/플로우 없음
 - (잔여) login/register 화면은 route에 남아 있지만 일반 시작 분기에서는 접근되지 않음
 - (잔여) `getCurrentDevice`는 PostgREST 응답(배열)과 모델이 불일치하나 UI 호출자 없음
 
@@ -75,14 +76,13 @@ Android는 사용자 흐름과 로컬 활동 기록이 상당 부분 구현되�
 
 현재 우선순위는 다음 순서가 맞다.
 
-1. `todo/004`: Android 활동/서비스 이벤트 업로드, retry, FCM 수신 검증
-2. `todo/005`: Firebase 및 Android runtime 설정
-3. `todo/003`: Android 온보딩/페어링 실기기 검증과 dead route 정리
-4. `todo/007`: 보호자 monitoring UI/연결 해제/알림 이력
-5. `todo/006`: rate limit, token rotation 등 sessionless 보안 보강
-6. `todo/009`: 운영 배포와 백업/로그/스케줄러 검증
-7. `todo/010`: Android/Deno CI
-8. `todo/008`: 낙상 감지 보류 상태 문서화와 dead-code 정리
+1. `todo/005`: Firebase 및 Android runtime 설정
+2. `todo/003`: Android 온보딩/페어링 실기기 검증과 dead route 정리
+3. `todo/007`: 보호자 monitoring UI/연결 해제
+4. `todo/006`: rate limit, token rotation 등 sessionless 보안 보강
+5. `todo/009`: 운영 배포와 백업/로그/스케줄러 검증
+6. `todo/010`: Android/Deno CI
+7. `todo/008`: 낙상 감지 보류 상태 문서화와 dead-code 정리
 
 ## Contract Corrections
 

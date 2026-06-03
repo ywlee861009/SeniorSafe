@@ -18,6 +18,12 @@ class PairingRepository @Inject constructor(
     suspend fun getPairingList(): List<PairingItem> =
         api.getPairingList().pairings
 
+    suspend fun getInactivityAlerts(seniorDeviceId: String, limit: Int = 50): List<InactivityAlertItem> =
+        api.getInactivityAlerts(
+            seniorDeviceId = seniorDeviceId,
+            limit = limit
+        ).alerts
+
     suspend fun disconnectPairing(pairingId: String): DisconnectPairingResponse =
         api.disconnectPairing(DisconnectPairingRequest(pairingId))
 }

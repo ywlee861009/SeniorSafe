@@ -42,8 +42,10 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 - 어르신 홈은 보호자 연결 상태, 활동 모니터링 상태, 최근 잠금해제 시각, 오늘 사용 기록 수를 표시한다.
 - 어르신 홈에서 활동 모니터링 서비스를 시작/중지할 수 있다.
 - 오늘의 글 화면과 매일 저녁 8시 로컬 알림 예약/탭 이동 구조가 추가됐다.
-- 활동 이벤트(잠금해제·충전)는 로컬 Room에만 저장됨. `activity-events` 백엔드 업로드 호출자 없음. Room DAO에 `getPendingUpload`/`markUploaded`만 정의.
-- 서비스 이벤트는 로컬 Room에 저장되지만 업로드 대기 조회/성공 표시 DAO가 없다.
+- 활동 이벤트(잠금해제·충전)는 로컬 Room 저장 후 `activity-events` 백엔드로 업로드되며, 성공 시 로컬 `uploaded=true`로 표시된다.
+- 서비스 이벤트는 로컬 Room 저장 후 백엔드 허용 lifecycle 이벤트(`started`, `stopped`, `heartbeat`, `error`)만 `service-events`로 업로드된다.
+- 활동/서비스 이벤트 업로드는 이벤트 직후, heartbeat 주기, WorkManager 네트워크 연결 재시도 경로에서 시도된다.
+- 보호자 홈은 연결된 어르신의 마지막 활동 시각과 최근 미사용 알림을 표시하고, 어르신 카드에서 전체 미사용 알림 이력을 볼 수 있다.
 - 현재 저장소에는 `core:fall-detection` 모듈이 없다. 낙상 감지 관련 done 티켓은 과거 기록이며 일반 MVP 진입 흐름에는 낙상 기능이 없다. 정리 대상: `todo/008`.
 - login/register Compose 화면 코드 잔존 — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않아 진입 불가.
 - device access token 저장 및 OkHttp Interceptor 코드는 실제 Retrofit 호출에 사용된다. `TokenDataStore`는 아직 user JWT 호환 필드를 함께 보관한다.
@@ -57,11 +59,11 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 - `done/013-android-senior-pairing-mock-ui.md`
 - `done/014-android-senior-home-ui.md`
 - `done/015-android-today-message-ui.md`
+- `done/004-unlock-inactivity-notification-flow.md`
 
 ## Android 남은 핵심 작업
 
 - `todo/003`: Android 온보딩/페어링 실서버 흐름의 실기기 검증, 실패/만료/재사용 UX, login/register/MVP dead route 정리. Fake API 제거와 Retrofit 전환은 완료.
-- `todo/004`: 활동 이벤트(`activity-events`)와 서비스 이벤트(`service-events`) 백엔드 업로드, 미전송 재시도, 보호자 FCM 수신/표시를 Android에 연결한다. 백엔드 배치/저장은 구현 완료.
 - `todo/005`: Firebase 런타임 설정, API base URL 환경 분리, FCM token 등록/갱신/권한 처리.
 - `todo/006`: 로그인 없는 기기 단위 인증, rate limit, pairing/device 권한 정책 구현.
 - `todo/007`: 보호자 화면을 device/pairing 기준 모니터링 화면으로 보강하고, 피벗 전 `service_active`/`last_fall_at` UI 모델을 정리.
@@ -78,14 +80,13 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 서버 API와 Android 로컬 UI 사이의 남은 연결을 먼저 닫는다.
 
-1. `todo/004-unlock-inactivity-notification-flow.md`
-2. `todo/005-firebase-runtime-config.md`
-3. `todo/003-android-onboarding-pairing-flow.md`
-4. `todo/007-guardian-monitoring-pairing-features.md`
-5. `todo/006-sessionless-device-security.md`
-6. `todo/009-local-dev-and-prod-deployment.md`
-7. `todo/010-ci-quality-gates.md`
-8. `todo/008-fall-detection-deferred-validation.md`
+1. `todo/005-firebase-runtime-config.md`
+2. `todo/003-android-onboarding-pairing-flow.md`
+3. `todo/007-guardian-monitoring-pairing-features.md`
+4. `todo/006-sessionless-device-security.md`
+5. `todo/009-local-dev-and-prod-deployment.md`
+6. `todo/010-ci-quality-gates.md`
+7. `todo/008-fall-detection-deferred-validation.md`
 
 ## 핵심 결정사항
 

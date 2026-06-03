@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.kero.anbu.feature.onboarding.RoleSelectScreen
 import com.kero.anbu.feature.guardian.navigation.guardianGraph
+import com.kero.anbu.feature.guardian.navigation.inactivityAlertsRoute
 import com.kero.anbu.feature.login.navigation.loginGraph
 import com.kero.anbu.feature.mvp.navigation.mvpGraph
 import com.kero.anbu.feature.senior.navigation.seniorGraph
@@ -62,6 +63,16 @@ fun AppNavHost(
 
         guardianGraph(
             onNavigateToConnect     = { navController.navigate(Route.CONNECT_SENIOR) },
+            onNavigateToAlerts      = { item ->
+                item.seniorDeviceId?.let { seniorDeviceId ->
+                    navController.navigate(
+                        inactivityAlertsRoute(
+                            seniorDeviceId = seniorDeviceId,
+                            seniorName = item.seniorName
+                        )
+                    )
+                }
+            },
             onConnectSuccess        = { navController.popBackStack() }
         )
 

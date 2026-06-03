@@ -247,6 +247,7 @@ class ActivityMonitorService : Service() {
             }
         } catch (e: Exception) {
             log("upload pending events failed ($reason): ${e.javaClass.simpleName}: ${e.message}")
+            ActivityUploadWorker.enqueueImmediate(applicationContext)
         }
     }
 

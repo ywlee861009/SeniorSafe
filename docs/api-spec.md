@@ -12,7 +12,7 @@ MVP는 사용자 로그인 없이 동작한다. 보호가 필요한 엔드포인
 Authorization: Bearer <device_access_token>
 ```
 
-> **구현 상태 표기**: ✅ 백엔드 구현됨 / ⚠️ Android 미연결 — 백엔드 Edge Function은 구현 완료, Android 클라이언트 연동은 미구현.
+> **구현 상태 표기**: ✅ 구현됨 / ⚠️ Android 미연결 — 백엔드 Edge Function은 구현 완료, Android 클라이언트 연동은 미구현.
 
 ## Devices ✅ 구현됨
 
@@ -190,9 +190,9 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-## Activity ✅ 백엔드 구현됨 — Android 연동 미구현
+## Activity ✅ 구현됨
 
-### Record Activity Events ✅ 백엔드 구현됨
+### Record Activity Events ✅ 구현됨
 
 `POST /functions/v1/activity-events`
 
@@ -226,7 +226,7 @@ Authorization: Bearer <device_access_token>
 - `last_activity_at`은 전송된 이벤트 중 가장 최근 `occurred_at`으로 갱신된다.
 - guardian 기기는 이 API를 호출할 수 없다 (403).
 
-### List Activity Events ✅ 백엔드 구현됨
+### List Activity Events ✅ 구현됨
 
 `GET /functions/v1/activity-events-list?senior_device_id=<uuid>&limit=50&offset=0`
 
@@ -253,7 +253,7 @@ Authorization: Bearer <device_access_token>
 }
 ```
 
-### Record Service Events ✅ 백엔드 구현됨
+### Record Service Events ✅ 구현됨
 
 `POST /functions/v1/service-events`
 
@@ -286,7 +286,7 @@ Android foreground service 실행 내역, heartbeat, 오류 등을 배치로 업
 - `event_type` 값: `started`, `stopped`, `heartbeat`, `error`.
 - `detail`은 선택 필드.
 
-### List Service Events ✅ 백엔드 구현됨
+### List Service Events ✅ 구현됨
 
 `GET /functions/v1/service-events-list?device_id=<uuid>&limit=50&offset=0`
 
@@ -313,7 +313,7 @@ Android foreground service 실행 내역, heartbeat, 오류 등을 배치로 업
 }
 ```
 
-## Inactivity Alerts ✅ 백엔드 구현됨 — Android 연동 미구현
+## Inactivity Alerts ✅ 구현됨
 
 ### Run Inactivity Alert Batch ✅ 백엔드 구현됨
 
@@ -342,7 +342,7 @@ pg_cron이 매일 00:00 UTC에 자동 실행한다. 수동 실행도 가능.
 - FCM 토큰 없는 보호자는 `skipped` 상태로 기록한다.
 - FCM 실패도 `failed` 상태로 `inactivity_alerts` 테이블에 기록한다.
 
-### List Inactivity Alerts ✅ 백엔드 구현됨
+### List Inactivity Alerts ✅ 구현됨
 
 `GET /functions/v1/inactivity-alerts-list?senior_device_id=<uuid>&limit=50&offset=0`
 
