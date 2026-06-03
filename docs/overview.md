@@ -139,7 +139,7 @@ Firebase FCM
 - 활동 이벤트 백엔드 업로드 호출자 없음. 현재 Android DTO도 백엔드 배치 계약(`{ "events": [...] }` → `{ "accepted": N }`)과 다름
 - 서비스 이벤트 백엔드 업로드 호출자 없음. 현재 Android DTO도 백엔드 배치 계약과 다름
 - 미전송 이벤트 재전송 루프 없음 (`UnlockEventDao`에만 `getPendingUpload`/`markUploaded` 존재, 서비스 이벤트 DAO에는 업로드 상태 처리 없음)
-- 실제 FCM 런타임 설정 미완료 (`google-services` plugin은 활성화됐고 `android/app/google-services.json` 실제 파일 배치 필요)
+- 실제 FCM 실기기 검증 미완료 (`google-services` plugin 활성화 및 로컬 `android/app/google-services.json` 배치 완료, 파일은 gitignore 대상)
 - 보호자 미사용 알림 탭 시 상세 화면 라우팅 없음
 
 **기타:**
@@ -172,7 +172,7 @@ Firebase FCM
 미구현:
 - 연결 해제 버튼/플로우
 - 어르신별 미사용 알림 이력 화면
-- N일 미사용 FCM 실기기 수신 검증 (`google-services.json` 미등록)
+- N일 미사용 FCM 실기기 수신 검증
 
 ### 백엔드 API 및 배치 (Supabase Edge Functions)
 

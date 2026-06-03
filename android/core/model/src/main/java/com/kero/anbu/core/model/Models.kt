@@ -90,17 +90,18 @@ data class DisconnectPairingResponse(
     val active: Boolean
 )
 
-// ─── Planned Activity API Contract ───────────────────────────────────────────
+// ─── Activity API Contract ───────────────────────────────────────────────────
 
-data class ActivityEventRequest(
+data class ActivityEventUploadItem(
     @SerializedName("occurred_at") val occurredAt: String,
     val source: String = "user_present"
 )
 
-data class ActivityEventResponse(
-    @SerializedName("event_id") val eventId: String,
-    @SerializedName("last_activity_at") val lastActivityAt: String
+data class ActivityEventsUploadRequest(
+    val events: List<ActivityEventUploadItem>
 )
+
+data class BatchUploadResponse(val accepted: Int)
 
 data class ActivityEventItem(
     val id: String,
@@ -111,13 +112,15 @@ data class ActivityEventItem(
 
 data class ActivityEventsResponse(val events: List<ActivityEventItem>)
 
-data class ServiceEventRequest(
+data class ServiceEventUploadItem(
     @SerializedName("event_type") val eventType: String,
     @SerializedName("occurred_at") val occurredAt: String,
     val detail: String? = null
 )
 
-data class ServiceEventResponse(@SerializedName("event_id") val eventId: String)
+data class ServiceEventsUploadRequest(
+    val events: List<ServiceEventUploadItem>
+)
 
 data class ServiceEventItem(
     val id: String,

@@ -111,7 +111,7 @@ class ActivityMonitorService : Service() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         KeroLog.w("[ActivityMonitorService] onTaskRemoved — scheduling AlarmManager restart in 1s")
         log("task removed; scheduling restart")
-        recordEvent("task_removed", "scheduling alarm restart")
+        recordEvent("error", "task removed; scheduling alarm restart")
         val restartIntent = Intent(this, ActivityMonitorService::class.java).apply {
             setPackage(packageName)
         }
@@ -163,6 +163,7 @@ class ActivityMonitorService : Service() {
                         activityRepository.recordUnlock(now)
                         val count = activityRepository.unlockCount()
                         log("unlock event recorded (total=$count)")
+                        uploadPendingEvents("unlock")
                     }
                 }
             }
@@ -195,6 +196,7 @@ class ActivityMonitorService : Service() {
                     activityRepository.recordUnlock(now, source)
                     val count = activityRepository.unlockCount()
                     log("activity event recorded: $source (total=$count)")
+                    uploadPendingEvents(source)
                 }
             }
         }
@@ -219,6 +221,8 @@ class ActivityMonitorService : Service() {
         heartbeatJob = serviceScope.launch {
             while (true) {
                 serviceStateStore.recordHeartbeat("heartbeat")
+                activityRepository.recordServiceEvent("heartbeat", "activity monitor heartbeat")
+                uploadPendingEvents("heartbeat")
                 delay(HEARTBEAT_INTERVAL_MS)
             }
         }
@@ -228,6 +232,21 @@ class ActivityMonitorService : Service() {
     private fun recordEvent(type: String, detail: String) {
         serviceScope.launch {
             activityRepository.recordServiceEvent(type, detail)
+            uploadPendingEvents("service:$type")
+        }
+    }
+
+    private suspend fun uploadPendingEvents(reason: String) {
+        try {
+            val result = activityRepository.uploadPendingEvents()
+            if (result.activityUploaded > 0 || result.serviceUploaded > 0) {
+                log(
+                    "uploaded pending events ($reason): " +
+                        "activity=${result.activityUploaded}, service=${result.serviceUploaded}"
+                )
+            }
+        } catch (e: Exception) {
+            log("upload pending events failed ($reason): ${e.javaClass.simpleName}: ${e.message}")
         }
     }
 

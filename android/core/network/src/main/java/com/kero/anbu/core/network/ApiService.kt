@@ -36,11 +36,8 @@ interface ApiService {
     @POST("pairing-disconnect")
     suspend fun disconnectPairing(@Body request: DisconnectPairingRequest): DisconnectPairingResponse
 
-    // TODO(ticket-004): backend `activity-events` expects a batch body
-    // {events:[...]} and returns {accepted:N}. Align ActivityEventRequest/Response
-    // to the batch contract when wiring senior activity upload. No caller yet.
     @POST("activity-events")
-    suspend fun recordActivityEvent(@Body request: ActivityEventRequest): ActivityEventResponse
+    suspend fun recordActivityEvents(@Body request: ActivityEventsUploadRequest): BatchUploadResponse
 
     @GET("activity-events-list")
     suspend fun getActivityEvents(
@@ -48,10 +45,8 @@ interface ApiService {
         @Query("limit") limit: Int = 50
     ): ActivityEventsResponse
 
-    // TODO(ticket-004): backend `service-events` expects a batch body
-    // {events:[...]} and returns {accepted:N}. No caller yet.
     @POST("service-events")
-    suspend fun recordServiceEvent(@Body request: ServiceEventRequest): ServiceEventResponse
+    suspend fun recordServiceEvents(@Body request: ServiceEventsUploadRequest): BatchUploadResponse
 
     @GET("service-events-list")
     suspend fun getServiceEvents(@Query("device_id") deviceId: String): ServiceEventsResponse

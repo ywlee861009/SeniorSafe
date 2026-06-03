@@ -6,6 +6,8 @@ plugins {
 android { namespace = "com.kero.anbu.core.activity" }
 
 dependencies {
+    implementation(project(":core:model"))
+    implementation(project(":core:network"))
     implementation(project(":core:util"))
     implementation(project(":core:diagnostics"))
 

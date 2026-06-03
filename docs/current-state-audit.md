@@ -6,7 +6,7 @@
 
 백엔드는 Supabase Edge Functions 기준 MVP 계약이 대부분 구현되어 있다. 기기 등록, device JWT, 페어링, 활동/서비스 이벤트 저장, 미사용 알림 배치, 알림 이력 조회까지 코드와 마이그레이션이 존재한다.
 
-Android는 사용자 흐름과 로컬 활동 기록이 상당 부분 구현되어 있고, 2026-06-03 기준 네트워크 연동의 핵심 블로커가 해소되었다. `NetworkModule`은 이제 `FakeApiService` 대신 실제 Retrofit client를 `ApiService`로 제공하며(`FakeApiService`는 삭제), `ApiService` 경로도 실제 Edge Function 이름과 일치한다. 따라서 역할 선택, 기기 등록, 연결 코드 생성, 보호자 연결, FCM token 갱신은 코드 경계상 실제 Supabase로 전송될 수 있는 상태다. 남은 것은 (1) `google-services.json` 배치와 실기기 빌드/실행 검증, (2) Supabase 배포 및 `FIREBASE_SERVICE_ACCOUNT` secret 등록, (3) 어르신 활동/서비스 이벤트 업로드(배치 계약) 연결, (4) 실기기 E2E 검증이다.
+Android는 사용자 흐름과 로컬 활동 기록이 상당 부분 구현되어 있고, 2026-06-03 기준 네트워크 연동의 핵심 블로커가 해소되었다. `NetworkModule`은 이제 `FakeApiService` 대신 실제 Retrofit client를 `ApiService`로 제공하며(`FakeApiService`는 삭제), `ApiService` 경로도 실제 Edge Function 이름과 일치한다. 따라서 역할 선택, 기기 등록, 연결 코드 생성, 보호자 연결, FCM token 갱신은 코드 경계상 실제 Supabase로 전송될 수 있는 상태다. `android/app/google-services.json`은 로컬에 배치됐고 gitignore 대상이다. 남은 것은 (1) Supabase 배포 및 `FIREBASE_SERVICE_ACCOUNT` secret 등록, (2) 어르신 활동/서비스 이벤트 업로드 실기기 검증, (3) 보호자 FCM 수신 E2E 검증이다.
 
 ## Backend
 
@@ -60,13 +60,13 @@ Android는 사용자 흐름과 로컬 활동 기록이 상당 부분 구현되�
 - ✅ (해소) Android `ApiService` 경로를 실제 Edge Function 이름과 일치시킴
 - ✅ (해소) `NetworkModule` 실 Retrofit 전환, `FakeApiService` 삭제
 - ✅ (해소) `ANBU_API_BASE_URL`을 `functions/v1/` 형식으로 정렬. 저장소 `android/gradle.properties`는 배포 Supabase URL을 기본값으로 두며, 로컬은 `~/.gradle/gradle.properties` 또는 `-PANBU_API_BASE_URL=http://10.0.2.2:54321/functions/v1/`로 override한다. 단, `core:network`의 코드 fallback은 아직 `http://10.0.2.2:8000/`이라 추가 정리 대상이다.
-- ✅ (해소) google-services plugin 활성화 — 단, `google-services.json` 실제 파일은 여전히 배치 필요(빌드 전제)
+- ✅ (해소) google-services plugin 활성화 및 로컬 `android/app/google-services.json` 배치 — 실제 파일은 gitignore 대상
 - ✅ (해소) 보호자 홈에 Android 13+ `POST_NOTIFICATIONS` 런타임 권한 요청 추가
-- (검증) 2026-06-03 `cd android && ./gradlew assembleDebug`는 `android/app/google-services.json` 누락으로 `:app:processDebugGoogleServices`에서 실패
-- (잔여) Android activity/service request DTO가 백엔드 배치 계약(`{ "events": [...] }`)과 다름 — 호출자 없어 경로만 정정, `TODO(ticket-004)` 표시
-- (잔여) `ActivityRepository`가 로컬 기록만 수행하고 업로드 worker/retry가 없음
-- (잔여) `UnlockEventDao`에는 pending upload API가 있으나 호출자가 없음
-- (잔여) `ServiceEventDao`에는 pending upload/mark uploaded API가 없음
+- ✅ (검증) 2026-06-03 `cd android && ./gradlew assembleDebug` 통과
+- ✅ (해소) Android activity/service upload DTO가 백엔드 배치 계약(`{ "events": [...] }` → `{ "accepted": N }`)과 일치
+- ✅ (해소) `ActivityRepository.uploadPendingEvents()`가 pending activity/service event 업로드와 `uploaded=true` 갱신 수행
+- ✅ (해소) `ServiceEventDao`에 pending upload/mark uploaded API 추가
+- (잔여) WorkManager 등 OS 친화적 백그라운드 재시도 정책 없음. 현재는 이벤트 기록 직후와 heartbeat 주기마다 재시도
 - (잔여) 보호자 홈은 마지막 활동 시각을 표시하지만 연결 해제/알림 이력/상세 화면 없음
 - (잔여) login/register 화면은 route에 남아 있지만 일반 시작 분기에서는 접근되지 않음
 - (잔여) `getCurrentDevice`는 PostgREST 응답(배열)과 모델이 불일치하나 UI 호출자 없음

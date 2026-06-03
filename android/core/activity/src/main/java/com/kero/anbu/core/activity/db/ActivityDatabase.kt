@@ -61,6 +61,20 @@ interface ServiceEventDao {
 
     @Query("SELECT COUNT(*) FROM service_events")
     suspend fun count(): Int
+
+    @Query(
+        """
+        SELECT * FROM service_events
+        WHERE uploaded = 0
+          AND eventType IN ('started', 'stopped', 'heartbeat', 'error')
+        ORDER BY id ASC
+        LIMIT :limit
+        """
+    )
+    suspend fun getPendingUpload(limit: Int): List<ServiceEventEntity>
+
+    @Query("UPDATE service_events SET uploaded = 1 WHERE id IN (:ids)")
+    suspend fun markUploaded(ids: List<Long>)
 }
 
 @Database(

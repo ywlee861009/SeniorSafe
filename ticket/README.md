@@ -48,7 +48,7 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 - login/register Compose 화면 코드 잔존 — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않아 진입 불가.
 - device access token 저장 및 OkHttp Interceptor 코드는 실제 Retrofit 호출에 사용된다. `TokenDataStore`는 아직 user JWT 호환 필드를 함께 보관한다.
 - MVP 디버깅 로그 저장은 `core:diagnostics` 모듈의 Room DB(`seniorsafe_diagnostics.db`)를 사용한다.
-- Android 빌드 검증: 2026-06-03 현재 `google-services` plugin이 활성화되어 있어 `android/app/google-services.json`이 없으면 `:app:processDebugGoogleServices`에서 실패한다. 실 Firebase 설정 파일 배치 후 `cd android && ./gradlew assembleDebug` 재검증 필요.
+- Android 빌드 검증: 2026-06-03 `android/app/google-services.json` 로컬 배치 후 `cd android && ./gradlew assembleDebug` 통과. 실제 Firebase 설정 파일은 gitignore 대상이다.
 
 ## 완료된 최신 Android 티켓
 

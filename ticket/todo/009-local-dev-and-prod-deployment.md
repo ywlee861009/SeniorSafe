@@ -28,7 +28,7 @@ P1
 - Rate limiting 정책 추가 (Supabase Edge Functions 레벨)
 - ✅ Android `ANBU_API_BASE_URL`은 `functions/v1/` 형식으로 정렬됨. 로컬/dev/prod flavor 또는 per-machine override 정책은 추가 정리 필요
 - ✅ `NetworkModule`의 `FakeApiService` 주입 제거 및 실제 Retrofit provider 전환 완료
-- Android `google-services` plugin 활성화로 `android/app/google-services.json` 없이는 debug build가 실패한다. 로컬/CI용 처리 정책 문서화 필요
+- ✅ 로컬 `android/app/google-services.json` 배치 후 debug build 통과. CI용 secret 주입 또는 stub/variant 처리 정책 문서화 필요
 
 ## 완료 조건
 
