@@ -93,7 +93,9 @@ supabase functions deploy inactivity-check
 ### 5. 환경변수 설정
 
 ```bash
-supabase secrets set FIREBASE_SERVER_KEY=your-key
+supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat service-account.json)"
+# Legacy FCM fallback only. Prefer FIREBASE_SERVICE_ACCOUNT for real delivery.
+supabase secrets set FIREBASE_SERVER_KEY=your-legacy-key
 supabase secrets set CRON_SECRET=your-secret
 ```
 
@@ -106,16 +108,12 @@ supabase secrets set CRON_SECRET=your-secret
 
 ## Android 연동
 
-기존 Retrofit 기반 코드를 Supabase 엔드포인트로 변경:
+Android `core:network`는 `ANBU_API_BASE_URL`을 Supabase Functions root로 두고, Retrofit 상대 경로는 Edge Function 이름을 사용한다.
 
 ```kotlin
-// 기존
-@POST("devices/register")
-suspend fun register(@Body request: RegisterRequest): DeviceRegisterResponse
-
-// 변경
-@POST("functions/v1/device-register")
+// Base URL: https://your-project-id.supabase.co/functions/v1/
+@POST("device-register")
 suspend fun register(@Body request: RegisterRequest): DeviceRegisterResponse
 ```
 
-Base URL: `https://your-project-id.supabase.co`
+로컬 Android emulator에서는 `ANBU_API_BASE_URL=http://10.0.2.2:54321/functions/v1/`로 override한다. Firebase Messaging을 빌드하려면 `android/app/google-services.json` 또는 variant별 파일이 필요하며, 실제 파일은 git에 포함하지 않는다.

@@ -8,7 +8,7 @@ P1
 
 로그인을 제거하더라도 API를 완전히 공개하면 아무 클라이언트나 잠금해제 이벤트, 서비스 실행 내역, 페어링, FCM 토큰을 조작할 수 있다. 사용자에게는 로그인 없는 경험을 제공하되, 서버는 기기 단위 인증과 남용 방지 장치를 가져야 한다.
 
-2026-05-30 현재 백엔드(Supabase Edge Functions)는 `device-register`에서 커스텀 device JWT를 발급하고, 모든 보호 API에서 `Authorization: Bearer <device_access_token>`을 검증한다. RLS 정책으로 DB 레벨 보안도 강제한다. 활동/서비스 이벤트 API에도 역할별 권한 검증 구현 완료. 남은 핵심은 Android 저장/전송 경계, rate limit, 운영 로그/secret 정책이다.
+2026-06-03 현재 백엔드(Supabase Edge Functions)는 `device-register`에서 커스텀 device JWT를 발급하고, 모든 보호 API에서 `Authorization: Bearer <device_access_token>`을 검증한다. RLS 정책으로 DB 레벨 보안도 강제한다. 활동/서비스 이벤트 API에도 역할별 권한 검증 구현 완료. Android도 device access token 저장과 OkHttp `Authorization` interceptor 경계가 구현됐다. 남은 핵심은 token 저장소 정리, rate limit, token rotation/폐기, 운영 로그/secret 정책이다.
 
 ## 작업 범위
 
@@ -23,10 +23,12 @@ P1
 - ⚠️ token rotation/폐기 정책 미구현
 - ⚠️ 운영 로그 민감 정보 점검 미완료
 
-### Android — 미구현
-- Android 보안 저장소에 device JWT 저장
-- OkHttp 인증 interceptor 적용
-- 토큰 분실/앱 삭제 시 새 기기 처리
+### Android — 일부 완료
+- ✅ `TokenDataStore.saveDeviceAuth()`에 device JWT/device id 저장 경계 구현
+- ✅ OkHttp 인증 interceptor가 저장된 device token을 Bearer header로 첨부
+- ✅ 앱 삭제/앱 데이터 삭제 시 `DeviceDataStore`의 local install id가 사라져 새 기기로 취급하는 정책 구현
+- ⚠️ `TokenDataStore`가 user JWT 호환 필드(`user_type`, `user_name`, `user_id`)를 함께 보관하므로 device auth 전용 모델로 정리 필요
+- ⚠️ Android 보안 저장소(EncryptedSharedPreferences 등) 사용 여부 미결정
 - 보안 정책 문서화
 
 ## 완료 조건

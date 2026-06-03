@@ -8,11 +8,12 @@ P2
 
 현재 빌드와 테스트는 수동 실행 중심이다. 로그인 없는 페어링과 잠금해제 미사용 알림 구조로 큰 변경이 들어가면 Android 컴파일, 백엔드 테스트, 마이그레이션, 배치 문제가 병합 전에 자동으로 잡혀야 한다.
 
-2026-06-01 현재 백엔드는 Supabase Edge Functions로 전환되어 Deno 테스트를 사용한다. 문서상 기준은 `cd supabase/functions && deno test --config=tests/deno.json tests/ --allow-env --allow-net`이며 activity/service/inactivity/pairing/device 권한 테스트가 포함된다. Android는 과거 `./gradlew assembleDebug` 통과 기록이 있으나 최신 수동 검증이 필요하고 현재 CI는 없다.
+2026-06-03 현재 백엔드는 Supabase Edge Functions로 전환되어 Deno 테스트를 사용한다. 문서상 기준은 `cd supabase/functions && deno test --config=tests/deno.json tests/ --allow-env --allow-net`이며 activity/service/inactivity/pairing/device 권한 테스트 52개가 포함된다. 이번 점검 환경에는 `deno` 실행 파일이 없어 백엔드 테스트를 재실행하지 못했다. Android는 `google-services` plugin 활성화 이후 `android/app/google-services.json`이 없으면 `./gradlew assembleDebug`가 `:app:processDebugGoogleServices`에서 실패한다. 현재 CI는 없다.
 
 ## 작업 범위
 
 - Android debug build CI workflow 추가.
+- CI에서 Firebase 설정 파일을 secret으로 주입하거나, CI 전용 google-services stub/variant 정책을 정한다.
 - Android unit test workflow 추가.
 - 백엔드 Deno test workflow 추가.
 - 현재 Supabase Edge Function 테스트를 CI 기준선으로 등록한다.

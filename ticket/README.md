@@ -1,6 +1,6 @@
 # SeniorSafe 티켓
 
-최종 점검일: 2026-06-01
+최종 점검일: 2026-06-03
 
 ## 기획 피벗
 
@@ -28,15 +28,17 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 - 현재 구현된 Edge Functions: `device-register`, `fcm-token`, `pairing-codes`, `pairing-claim`, `pairings-list`, `pairing-disconnect`, `activity-events`, `activity-events-list`, `service-events`, `service-events-list`, `inactivity-check`, `inactivity-alerts-list`.
 - PostgreSQL 마이그레이션은 `devices`, `pairing_codes`, `pairings`, `activity_events`, `service_events`, `inactivity_alerts`와 RLS 정책을 포함한다.
 - 미사용 알림 배치는 `inactivity-check`로 구현되어 있고 pg_cron 마이그레이션이 매일 00:00 UTC 호출을 설정한다.
-- 남은 백엔드 운영 과제: 페어링 코드 rate limit, token rotation/폐기, FCM HTTP v1 마이그레이션, 운영 로그/secret 점검.
+- 남은 백엔드 운영 과제: 페어링 코드 rate limit, token rotation/폐기, pg_cron 설정값 검증, 운영 로그/secret 점검.
+- FCM 발송은 `FIREBASE_SERVICE_ACCOUNT` 기반 HTTP v1을 주 경로로 사용하고, 종료된 legacy `FIREBASE_SERVER_KEY`는 fallback/test 호환 경로로만 남아 있다.
 
 ### Android
 
 - 앱 진입점은 로컬 `DeviceDataStore` 기준 역할 선택/페어링 상태로 결정된다.
 - 새 설치 후 로그인 없이 `RoleSelectScreen`에서 어르신/보호자 역할을 선택하고 `DeviceRepository.registerCurrentDevice()` 경계를 호출한다.
-- 단, `NetworkModule`이 현재 Retrofit이 아니라 `FakeApiService`를 주입하므로 device 등록/페어링/FCM token 갱신은 실제 Supabase API로 나가지 않는다.
-- 어르신 플로우는 fake API 기반 연결 코드 표시, active pairing 확인, 어르신 홈 진입까지 동작한다.
-- 보호자 플로우는 fake API 기반 코드 입력/연결 성공/목록 표시까지 동작한다.
+- `NetworkModule`은 실제 Retrofit + GsonConverterFactory를 주입하며, `BuildConfig.ANBU_API_BASE_URL` 기준 Supabase Edge Functions를 호출한다.
+- `ApiService`의 device/pairing/FCM 경로는 실제 Edge Function 이름(`device-register`, `pairing-codes`, `pairing-claim`, `pairings-list`, `pairing-disconnect`, `fcm-token`)과 일치한다.
+- 어르신 플로우는 실제 API 경계로 연결 코드 생성, active pairing 확인, 어르신 홈 진입까지 동작하도록 정렬됐다.
+- 보호자 플로우는 실제 API 경계로 코드 입력/연결 성공/목록 표시까지 동작하도록 정렬됐다.
 - 어르신 홈은 보호자 연결 상태, 활동 모니터링 상태, 최근 잠금해제 시각, 오늘 사용 기록 수를 표시한다.
 - 어르신 홈에서 활동 모니터링 서비스를 시작/중지할 수 있다.
 - 오늘의 글 화면과 매일 저녁 8시 로컬 알림 예약/탭 이동 구조가 추가됐다.
@@ -44,9 +46,9 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 - 서비스 이벤트는 로컬 Room에 저장되지만 업로드 대기 조회/성공 표시 DAO가 없다.
 - 현재 저장소에는 `core:fall-detection` 모듈이 없다. 낙상 감지 관련 done 티켓은 과거 기록이며 일반 MVP 진입 흐름에는 낙상 기능이 없다. 정리 대상: `todo/008`.
 - login/register Compose 화면 코드 잔존 — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않아 진입 불가.
-- device access token 저장 및 OkHttp Interceptor 코드는 존재하지만 fake API 주입 때문에 실제 네트워크 호출에는 사용되지 않는다. `TokenDataStore`는 user JWT 호환 필드를 함께 보관한다.
+- device access token 저장 및 OkHttp Interceptor 코드는 실제 Retrofit 호출에 사용된다. `TokenDataStore`는 아직 user JWT 호환 필드를 함께 보관한다.
 - MVP 디버깅 로그 저장은 `core:diagnostics` 모듈의 Room DB(`seniorsafe_diagnostics.db`)를 사용한다.
-- Android 빌드 검증: 2026-06-01 `cd android && ./gradlew assembleDebug` 통과.
+- Android 빌드 검증: 2026-06-03 현재 `google-services` plugin이 활성화되어 있어 `android/app/google-services.json`이 없으면 `:app:processDebugGoogleServices`에서 실패한다. 실 Firebase 설정 파일 배치 후 `cd android && ./gradlew assembleDebug` 재검증 필요.
 
 ## 완료된 최신 Android 티켓
 
@@ -58,7 +60,7 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 ## Android 남은 핵심 작업
 
-- `todo/003`: Android 네트워크/데이터 계층을 현재 Edge Function 계약(`device-register`, `pairing-codes`, `pairing-claim`, `pairings-list`, `pairing-disconnect`)과 맞추고, `FakeApiService` 주입을 실제 Retrofit provider로 전환한다.
+- `todo/003`: Android 온보딩/페어링 실서버 흐름의 실기기 검증, 실패/만료/재사용 UX, login/register/MVP dead route 정리. Fake API 제거와 Retrofit 전환은 완료.
 - `todo/004`: 활동 이벤트(`activity-events`)와 서비스 이벤트(`service-events`) 백엔드 업로드, 미전송 재시도, 보호자 FCM 수신/표시를 Android에 연결한다. 백엔드 배치/저장은 구현 완료.
 - `todo/005`: Firebase 런타임 설정, API base URL 환경 분리, FCM token 등록/갱신/권한 처리.
 - `todo/006`: 로그인 없는 기기 단위 인증, rate limit, pairing/device 권한 정책 구현.
@@ -76,14 +78,14 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 서버 API와 Android 로컬 UI 사이의 남은 연결을 먼저 닫는다.
 
-1. `todo/003-android-onboarding-pairing-flow.md`
-2. `todo/004-unlock-inactivity-notification-flow.md`
-3. `todo/005-firebase-runtime-config.md`
-4. `todo/006-sessionless-device-security.md`
-5. `todo/007-guardian-monitoring-pairing-features.md`
-6. `todo/008-fall-detection-deferred-validation.md`
-7. `todo/009-local-dev-and-prod-deployment.md`
-8. `todo/010-ci-quality-gates.md`
+1. `todo/004-unlock-inactivity-notification-flow.md`
+2. `todo/005-firebase-runtime-config.md`
+3. `todo/003-android-onboarding-pairing-flow.md`
+4. `todo/007-guardian-monitoring-pairing-features.md`
+5. `todo/006-sessionless-device-security.md`
+6. `todo/009-local-dev-and-prod-deployment.md`
+7. `todo/010-ci-quality-gates.md`
+8. `todo/008-fall-detection-deferred-validation.md`
 
 ## 핵심 결정사항
 

@@ -4,7 +4,7 @@
 
 P0
 
-## 진행 현황 (2026-06-01)
+## 진행 현황 (2026-06-03)
 
 코드 측 설정은 대부분 적용. 잔여는 실제 자격증명 파일 배치와 인프라/실기기 검증(운영자 수동 작업).
 
@@ -18,6 +18,7 @@ P0
 - ⬜ (잔여, 운영자) `supabase functions deploy` + `supabase secrets set FIREBASE_SERVICE_ACCOUNT=...`
 - ⬜ (잔여) FCM 토큰 동기화 시점(등록/재실행/갱신/페어링 후) 실기기 검증
 - ⬜ (잔여) local/dev/prod product flavor 분리 (`ticket/todo/009`와 연계), 실행 가이드 문서화
+- ⚠️ 2026-06-03 현재 `cd android && ./gradlew assembleDebug`는 `android/app/google-services.json` 누락으로 실패한다. 실제 파일 또는 빌드 variant별 대체 파일 배치 후 재검증 필요
 
 ## 문제
 

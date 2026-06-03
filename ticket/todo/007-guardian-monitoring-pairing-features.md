@@ -8,11 +8,11 @@ P1
 
 보호자 화면은 기존 user 관계와 placeholder 상태에 기대는 부분이 있다. 새 구조에서는 active pairing 기준으로 연결된 어르신, 마지막 잠금해제 시각, 미사용 알림 이력, 알림 탭 이동, 연결 해제를 제공해야 한다.
 
-2026-06-01 현재 Android 보호자 모델은 `last_activity_at`, `inactivity_threshold_days`를 받을 수 있게 일부 갱신됐고 화면도 마지막 사용 기록을 표시한다. 하지만 런타임은 `FakeApiService`이며 `PairingItem.serviceActive`가 `active` alias로 남아 있어 실제 서비스/활동 상태를 표현하지 않는다. 연결 해제 UI, 미사용 알림 이력, 알림 탭 상세 이동도 없다. 백엔드(Supabase)는 `pairings-list`와 `inactivity-alerts-list`를 제공하므로 남은 작업은 Android 클라이언트 중심이다.
+2026-06-03 현재 Android 보호자 모델은 `last_activity_at`, `inactivity_threshold_days`를 받을 수 있게 갱신됐고 화면도 마지막 사용 기록을 표시한다. 런타임은 실제 Retrofit/Supabase Edge Function 경계로 전환됐다. 다만 `PairingItem.serviceActive`가 `active` alias로 남아 있어 실제 서비스/활동 상태를 표현하지 않는다. 연결 해제 UI, 미사용 알림 이력, 알림 탭 상세 이동도 없다. 백엔드(Supabase)는 `pairings-list`, `activity-events-list`, `service-events-list`, `inactivity-alerts-list`를 제공하므로 남은 작업은 Android 클라이언트 중심이다.
 
 ## 작업 범위
 
-- 보호자 홈에서 실제 Supabase `pairings-list` active pairing 목록을 조회한다.
+- 보호자 홈에서 실제 Supabase `pairings-list` active pairing 목록을 조회한다. (repository/API 경계는 구현됨, 실기기 검증 필요)
 - 어르신 표시 이름과 연결 시간을 보여준다.
 - 어르신별 마지막 잠금해제 시각과 경과 시간을 보여준다.
 - `service_active`와 `last_fall_at` 같은 피벗 전 필드를 제거하거나 실제 heartbeat/activity 계약으로 교체한다.

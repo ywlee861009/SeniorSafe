@@ -4,7 +4,7 @@
 
 P0
 
-## 진행 현황 (2026-06-01)
+## 진행 현황 (2026-06-03)
 
 백엔드는 전부 완료. 보호자 FCM 수신 경로도 코드상 연결됨. 잔여는 어르신 활동 업로드(배치 계약).
 
@@ -13,6 +13,7 @@ P0
 - ⬜ (잔여) 어르신 활동 이벤트 업로드: `ApiService.recordActivityEvent`/`recordServiceEvent`는 경로만 정렬했고, 백엔드 배치 계약(`{events:[...]}` → `{accepted}`)에 맞게 DTO/Repository를 정렬해야 함 (현재 단건 모델, 호출자 없음, `TODO(ticket-004)` 표시)
 - ⬜ (잔여) `ActivityRepository` 업로드 worker/retry, `uploaded` 상태 갱신, `ServiceEventDao` pending upload API
 - ⬜ (잔여) 보호자 홈 마지막 활동 시각 실데이터 연결, 미사용 알림 이력 화면
+- ⚠️ Android `ActivityMonitorService`는 로컬 service event로 `task_removed`를 기록하지만 백엔드 `service_events.event_type` 허용값은 `started`, `stopped`, `heartbeat`, `error`뿐이다. 업로드 구현 시 매핑 또는 허용값 확장이 필요하다.
 - 참고: 실기기 E2E는 어르신 `last_activity_at`을 수동 세팅하면 활동 업로드 없이도 푸시 경로 검증 가능
 
 ## 문제
@@ -21,7 +22,7 @@ P0
 
 이 기능은 센서 알고리즘보다 기술 리스크가 낮고, 서비스 실행 내역과 잠금해제 내역을 DB에 남기면 실제 기기 동작을 검증하기 쉽다.
 
-2026-06-01 현재 백엔드는 범용 활동 이벤트 Edge Function인 `activity-events`를 구현했다. Android 로컬 Room 테이블 이름은 `unlock_events`지만 실제로는 `user_present`, `power_connected`, `power_disconnected`를 모두 저장하므로, 서버 모델/API 명칭은 `ActivityEvent`와 `last_activity_at`으로 맞춘다. 남은 핵심은 Android 로컬 이벤트를 Supabase 배치 요청(`{ "events": [...] }`)으로 업로드하고 성공 시 로컬 `uploaded` 상태를 갱신하는 것이다.
+2026-06-03 현재 백엔드는 범용 활동 이벤트 Edge Function인 `activity-events`를 구현했다. Android 로컬 Room 테이블 이름은 `unlock_events`지만 실제로는 `user_present`, `power_connected`, `power_disconnected`를 모두 저장하므로, 서버 모델/API 명칭은 `ActivityEvent`와 `last_activity_at`으로 맞춘다. 남은 핵심은 Android 로컬 이벤트를 Supabase 배치 요청(`{ "events": [...] }`)으로 업로드하고 성공 시 로컬 `uploaded` 상태를 갱신하는 것이다.
 
 ## 선행 완료 사항
 

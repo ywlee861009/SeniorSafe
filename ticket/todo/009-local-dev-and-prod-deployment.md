@@ -17,15 +17,18 @@ P1
 - ~~host cron / backend scheduler~~ → ✅ pg_cron 구현 완료 (매일 00:00 UTC)
 
 ### 남은 작업
-- `docs/deployment.md`를 Supabase 기준으로 갱신 ✅ 완료
+- `docs/deployment.md`를 Supabase 기준으로 갱신 ✅ 기본 완료, 2026-06-03 기준 FCM HTTP v1/pg_cron 설정값/Android 빌드 전제 최신화 필요
 - Supabase Pro 플랜 전환 검토 (pg_cron, 커스텀 도메인)
 - `supabase secrets set`으로 환경 변수 설정 문서화
+- pg_cron migration에서 사용하는 `app.settings.supabase_url`, `app.settings.cron_secret` 설정 절차 또는 Supabase Vault 기반 대체 절차 문서화
+- `net.http_post` 사용을 위한 `pg_net` extension 활성화 필요 여부 검증
 - Supabase Database backups 설정
 - Edge Function 로그 모니터링 설정
-- Firebase Server Key → FCM HTTP v1 API 마이그레이션 검토
+- FCM HTTP v1 운영 secret(`FIREBASE_SERVICE_ACCOUNT`) 설정 및 legacy `FIREBASE_SERVER_KEY` fallback 제거/유지 정책 결정
 - Rate limiting 정책 추가 (Supabase Edge Functions 레벨)
-- Android `ANBU_API_BASE_URL` 기본값 전환 (`10.0.2.2:8000` → 로컬 Supabase `10.0.2.2:54321/functions/v1/` 또는 프로덕션 Supabase URL)
-- `NetworkModule`의 `FakeApiService` 주입을 실제 Retrofit provider로 전환하거나 빌드 타입별 fake/real 주입 정책 문서화
+- ✅ Android `ANBU_API_BASE_URL`은 `functions/v1/` 형식으로 정렬됨. 로컬/dev/prod flavor 또는 per-machine override 정책은 추가 정리 필요
+- ✅ `NetworkModule`의 `FakeApiService` 주입 제거 및 실제 Retrofit provider 전환 완료
+- Android `google-services` plugin 활성화로 `android/app/google-services.json` 없이는 debug build가 실패한다. 로컬/CI용 처리 정책 문서화 필요
 
 ## 완료 조건
 

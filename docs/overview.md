@@ -4,7 +4,7 @@
 
 고령자의 휴대폰 사용 활동을 보호자가 확인할 수 있게 하는 모바일 안전망 시스템.
 
-현재 MVP는 낙상 감지 기능을 보류하고, 어르신 휴대폰에서 일정 기간 활동이 감지되지 않으면 보호자에게 푸시 알림을 보내는 흐름에 집중한다. Android 앱은 잠금해제, 충전기 연결/해제 등 활동 이벤트와 서비스 실행 내역을 로컬 DB에 기록한다. 백엔드는 활동/서비스 이벤트 수신, 마지막 활동 시각 갱신, 미사용 알림 배치를 구현 완료했지만 Android 런타임은 아직 `FakeApiService`를 주입하고 있어 실제 Supabase API와 연결되어 있지 않다.
+현재 MVP는 낙상 감지 기능을 보류하고, 어르신 휴대폰에서 일정 기간 활동이 감지되지 않으면 보호자에게 푸시 알림을 보내는 흐름에 집중한다. Android 앱은 잠금해제, 충전기 연결/해제 등 활동 이벤트와 서비스 실행 내역을 로컬 DB에 기록한다. 백엔드는 활동/서비스 이벤트 수신, 마지막 활동 시각 갱신, 미사용 알림 배치를 구현 완료했다. Android 런타임도 실제 Retrofit/Supabase Edge Function 경계로 전환됐지만, 어르신 활동/서비스 이벤트 업로드 worker와 실기기 E2E 검증은 아직 남아 있다.
 
 SeniorSafe MVP는 계정 로그인 없이 동작한다. 앱을 설치한 뒤 보호자 또는 어르신 모드를 선택하고, 어르신 앱에 표시되는 연결 코드를 보호자 앱에 입력해 바로 페어링한다.
 
@@ -119,11 +119,14 @@ Firebase FCM
 
 ## 핵심 기능
 
-### Android 현재 구현 메모 (2026-06-01 기준)
+### Android 현재 구현 메모 (2026-06-03 기준)
 
 **구현됨:**
 - `RoleSelect → Pairing → Senior/Guardian Home` 진입 흐름
 - 역할 선택 시 `DeviceRepository.registerCurrentDevice()` 호출 및 device token 저장 경계 구현
+- `NetworkModule`이 실제 Retrofit + GsonConverterFactory를 주입하고 `BuildConfig.ANBU_API_BASE_URL`을 Supabase Functions base URL로 사용
+- `ApiService`의 device/pairing/FCM 경로가 실제 Edge Function 이름과 일치
+- 어르신 연결 코드 생성과 보호자 코드 입력이 `pairing-codes`, `pairing-claim`, `pairings-list` API 경계로 연결
 - `ActivityMonitorService`: 잠금해제·충전 이벤트 감지 → `unlock_events` Room 저장
 - 서비스 다층 생존(foreground + WakeLock + START_STICKY + `onTaskRemoved` AlarmManager 재예약 + BootReceiver + 3분 stale 자동 복구)
 - 서비스 생존 상태 heartbeat → `ActivityServiceStateStore` (SharedPreferences `last_heartbeat_at`)
@@ -132,47 +135,41 @@ Firebase FCM
 - MVP 진단 로그는 `core:diagnostics` 모듈의 Room DB(`seniorsafe_diagnostics.db`)에 저장
 - `GuardianFcmService`가 FCM 수신 및 token refresh 시 `DeviceRepository.updateFcmToken()` 호출
 
-**미구현:**
-- 실제 Supabase API 연결 (`NetworkModule`이 Retrofit 대신 `FakeApiService`를 주입)
-- Android `ApiService` 경로와 DTO가 현재 Edge Function 계약과 불일치
-  - 예: Android `devices/register`, `pairing/codes`, `pairings`, `activity/events`
-  - 실제: `device-register`, `pairing-codes`, `pairing-claim`, `pairings-list`, `activity-events`
-- 활동 이벤트 백엔드 업로드 호출자 없음
-- 서비스 이벤트 백엔드 업로드 호출자 없음
+**미구현/잔여:**
+- 활동 이벤트 백엔드 업로드 호출자 없음. 현재 Android DTO도 백엔드 배치 계약(`{ "events": [...] }` → `{ "accepted": N }`)과 다름
+- 서비스 이벤트 백엔드 업로드 호출자 없음. 현재 Android DTO도 백엔드 배치 계약과 다름
 - 미전송 이벤트 재전송 루프 없음 (`UnlockEventDao`에만 `getPendingUpload`/`markUploaded` 존재, 서비스 이벤트 DAO에는 업로드 상태 처리 없음)
-- 실제 FCM 런타임 설정 미완료 (`google-services.json` 미등록, `google-services` 플러그인 주석)
+- 실제 FCM 런타임 설정 미완료 (`google-services` plugin은 활성화됐고 `android/app/google-services.json` 실제 파일 배치 필요)
 - 보호자 미사용 알림 탭 시 상세 화면 라우팅 없음
 
 **기타:**
 - 현재 저장소에는 `core:fall-detection` 모듈이 존재하지 않는다. 낙상 감지 완료 티켓은 과거 기록으로만 남아 있으며 일반 MVP 앱 흐름에는 낙상 기능 진입점이 없다. 정리 대상: `ticket/todo/008`
 - login/register 화면 코드 잔존(dead route — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않음)
-- `ANBU_API_BASE_URL = "http://10.0.2.2:8000/"` 기본값이 남아 있으나 현재 `NetworkModule`에서는 사용되지 않는다
+- `core:network`의 fallback 기본값은 아직 `http://10.0.2.2:8000/`이지만, 저장소의 `android/gradle.properties`가 Supabase Functions URL을 제공한다. 머신별 override 또는 product flavor 정책은 추가 정리 대상이다.
 
 ### 어르신 앱
 
 구현됨:
 - 역할 선택 → 어르신 홈 진입
-- 연결 코드 화면 (로컬 난수, mock)
+- 서버 연결 코드 화면 (`pairing-codes` API 경계)
 - 활동 모니터링 Foreground Service 실행 (서비스 생존 다층 방어)
 - 서비스 시작/중지/heartbeat/오류 내역을 로컬 DB에 기록
 - 활동 이벤트(잠금해제, 충전기 연결/해제)를 로컬 DB에 기록
 - 매일 저녁 8시 "오늘의 글" 로컬 푸시 발송·열람 기록
 
 미구현:
-- 기기 등록 및 device access token 발급 호출
-- 실제 페어링 코드 서버 등록 (현재 mock)
+- 실기기 기준 기기 등록/페어링 성공·실패·만료·재사용 상태 검증
 - 활동 이벤트 백엔드 업로드 및 재전송
 
 ### 보호자 앱
 
 구현됨:
 - 역할 선택 → 보호자 홈 진입
-- 연결 코드 입력 UI 및 repository 경계
-- 연결된 어르신 목록 조회 UI
-- FCM service skeleton
+- 연결 코드 입력 UI 및 실제 `pairing-claim` repository/API 경계
+- 연결된 어르신 목록 조회 UI 및 실제 `pairings-list` repository/API 경계
+- FCM service 수신/표시 및 token refresh hook
 
 미구현:
-- 실제 Supabase API 연결 (`FakeApiService` 사용 중)
 - 연결 해제 버튼/플로우
 - 어르신별 미사용 알림 이력 화면
 - N일 미사용 FCM 실기기 수신 검증 (`google-services.json` 미등록)
@@ -189,7 +186,7 @@ Firebase FCM
 - 서비스 이벤트 수신/조회 (`service-events`, `service-events-list`)
 - 미활동 알림 배치 (`inactivity-check` — pg_cron, 중복 방지 포함)
 - 미활동 알림 이력 조회 (`inactivity-alerts-list`)
-- 보호자 FCM 발송 (Legacy HTTP API)
+- 보호자 FCM 발송 (HTTP v1 via `FIREBASE_SERVICE_ACCOUNT`, legacy `FIREBASE_SERVER_KEY`는 fallback/test 호환)
 
 ---
 
@@ -343,7 +340,8 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 SUPABASE_JWT_SECRET=<jwt-secret>
 
 # Firebase
-FIREBASE_SERVER_KEY=<firebase-server-key>
+FIREBASE_SERVICE_ACCOUNT=<firebase-service-account-json>
+FIREBASE_SERVER_KEY=<legacy-fallback-key>
 
 # Batch
 CRON_SECRET=<random-secret-for-pg-cron>

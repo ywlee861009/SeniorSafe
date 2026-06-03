@@ -4,24 +4,23 @@
 
 P0
 
-## 진행 현황 (2026-06-01)
+## 진행 현황 (2026-06-03)
 
 네트워크 연동의 핵심 블로커가 해소되었다. 잔여는 실기기 흐름 검증과 dead route 정리.
 
 - ✅ `NetworkModule`에 실제 Retrofit + GsonConverterFactory provider 구성, `FakeApiService` 주입 제거 및 파일 삭제
-- ✅ `BuildConfig.ANBU_API_BASE_URL`을 Retrofit `baseUrl`에 연결, 기본값을 `http://10.0.2.2:54321/functions/v1/`로 정정
+- ✅ `BuildConfig.ANBU_API_BASE_URL`을 Retrofit `baseUrl`에 연결. `android/gradle.properties`는 배포 Supabase Functions URL을 기본값으로 두며, 로컬은 `~/.gradle/gradle.properties` 또는 `-PANBU_API_BASE_URL=http://10.0.2.2:54321/functions/v1/`로 override한다.
 - ✅ `ApiService` 경로를 실제 Edge Function 이름으로 정렬 (`device-register`, `fcm-token`, `pairing-codes`, `pairing-claim`, `pairings-list`, `pairing-disconnect` 등)
 - ✅ disconnect를 `POST pairing-disconnect` + `DisconnectPairingRequest(pairing_id)` body로 정정, 목록 API를 query 파라미터로 정정
 - ✅ 기존 device-token OkHttp interceptor / `TokenDataStore` 저장 경계는 그대로 재사용 (이미 구현되어 있었음)
+- ⚠️ `getCurrentDevice`는 PostgREST가 배열을 반환하는데 Android 모델은 단건이다. 현재 UI 호출자는 없지만 서버 동기화 기능을 붙일 때 정정 필요.
 - ⬜ (잔여) 실제 백엔드 기준 페어링 성공/실패·만료·재사용 상태 표시, 앱 재실행 시 홈 진입 검증
 - ⬜ (잔여) login/register/MVP 대시보드 dead route 정리 (`ticket/todo/008`과 연계)
-- ⬜ (잔여) `google-services.json` 배치 + 실 프로젝트 URL 설정 후 실기기 검증 (`ticket/todo/005`)
+- ⬜ (잔여) `google-services.json` 배치 후 `assembleDebug` 및 실기기 검증 (`ticket/todo/005`)
 
 ## 문제
 
-Android 앱의 로컬 역할 선택/어르신 목업 페어링 UI는 구현됐다. 남은 작업은 서버 기기 등록 API와 실제 페어링 API를 연결하고, 보호자 코드 입력 플로우와 실패 상태를 새 device/pairing 계약 기준으로 완성하는 것이다.
-
-2026-06-01 현재 백엔드는 새 device/pairing API가 Supabase Edge Functions로 구현되어 있다. Android는 `DeviceRepository`, device token 저장, OkHttp 인증 interceptor, pairing repository 경계가 생겼지만 `NetworkModule`이 여전히 `FakeApiService`를 주입한다. 또한 Android `ApiService` 경로는 `devices/register`, `pairing/codes`, `pairings` 같은 FastAPI 스타일 이름이고, 실제 Edge Function 이름(`device-register`, `pairing-codes`, `pairing-claim`, `pairings-list`, `pairing-disconnect`)과 맞지 않는다. 이 티켓의 핵심은 Android 런타임을 fake에서 실제 Supabase 계약으로 전환하는 것이다.
+Android 앱의 로컬 역할 선택/어르신 목업 페어링 UI는 실제 Supabase Edge Function 계약으로 전환됐다. `NetworkModule`은 실제 Retrofit client를 주입하고, `ApiService` 경로도 Edge Function 이름과 맞는다. 이 티켓의 남은 핵심은 실제 Firebase/Supabase 설정이 들어간 기기에서 역할 선택, 기기 등록, 코드 생성, 코드 입력, 앱 재실행 후 홈 진입, 실패 상태 표시가 제품 흐름으로 충분한지 검증하고 정리하는 것이다.
 
 ## 선행 완료 사항
 
@@ -34,21 +33,20 @@ Android 앱의 로컬 역할 선택/어르신 목업 페어링 UI는 구현됐�
 ## 작업 범위
 
 - Android 기기 등록 API 연동:
-  - `FakeApiService` 주입 제거 또는 빌드 타입별 fake/real 전환
-  - `BuildConfig.ANBU_API_BASE_URL` 기반 Retrofit provider 복구
-  - 로컬 `localDeviceId`와 `role`을 서버 `POST /functions/v1/device-register` 요청에 연결
-  - 서버 발급 device token 저장 경계 점검
+  - ✅ `FakeApiService` 주입 제거 및 실제 Retrofit provider 복구
+  - ✅ 로컬 `localDeviceId`와 `role`을 서버 `POST /functions/v1/device-register` 요청에 연결
+  - ✅ 서버 발급 device token 저장 경계 점검
   - `TokenDataStore`의 user JWT 호환 필드를 device auth 전용 모델로 정리할지 결정
   - OkHttp `Authorization: Bearer <device_access_token>` interceptor 실서버 호출 검증
   - 앱 재실행 시 `devices/me` 또는 로컬 상태와 서버 상태 동기화
 - 어르신 모드 서버 페어링 연동:
-  - fake 6자리 코드 생성을 `POST /functions/v1/pairing-codes` 호출로 교체
-  - 만료 시간/재생성 UI를 서버 응답 기준으로 표시
-  - 페어링 완료 상태를 `GET /functions/v1/pairings-list`의 active pairing 기준으로 반영
+  - ✅ fake 6자리 코드 생성을 `POST /functions/v1/pairing-codes` 호출로 교체
+  - ✅ 만료 시간/재생성 UI를 서버 응답 기준으로 표시
+  - ✅ 페어링 완료 상태를 `GET /functions/v1/pairings-list`의 active pairing 기준으로 반영
 - 보호자 모드 서버 페어링 연동:
-  - 연결 코드 입력을 현재 백엔드 계약인 `POST /functions/v1/pairing-claim` 호출로 연결
-  - 연결 목록 조회를 `GET /functions/v1/pairings-list`로 연결
-  - 연결 해제를 `POST /functions/v1/pairing-disconnect`로 연결
+  - ✅ 연결 코드 입력을 현재 백엔드 계약인 `POST /functions/v1/pairing-claim` 호출로 연결
+  - ✅ 연결 목록 조회를 `GET /functions/v1/pairings-list`로 연결
+  - ✅ 연결 해제를 `POST /functions/v1/pairing-disconnect`로 연결하는 repository 경계 구현
   - 실패/만료/이미 사용된 코드 상태 표시
   - 페어링 완료 후 보호자 홈 이동
   - 페어링 완료 후 마지막 잠금해제 시각 조회 준비
@@ -63,6 +61,7 @@ Android 앱의 로컬 역할 선택/어르신 목업 페어링 UI는 구현됐�
 - 앱을 다시 열어도 페어링된 홈 화면으로 진입한다.
 - Android 런타임이 실제 Supabase Edge Functions를 호출한다.
 - Android `ApiService`에 피벗 전 `auth/*`, `fall/*`, `pairing/connect`, `pairing/list`, `devices/token` 엔드포인트가 일반 MVP 경로에서 남아 있지 않다.
+- `google-services.json`이 배치된 환경에서 `cd android && ./gradlew assembleDebug`가 통과한다.
 - 어르신 모드 진입 후 잠금해제 활동 모니터링을 시작할 수 있다.
 - 어르신 홈에서 오늘의 글을 열 수 있다.
 - 페어링 실패 상태가 사용자에게 명확히 표시된다.
