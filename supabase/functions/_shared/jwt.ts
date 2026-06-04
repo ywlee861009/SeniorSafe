@@ -8,12 +8,14 @@ export function __resetMockToken() { _mockToken = undefined; }
 
 /**
  * Create a custom JWT for device authentication.
- * Signed with Supabase JWT secret so PostgREST accepts it.
- * auth.uid() in RLS policies will return the device_id.
+ * Signed with DEVICE_JWT_SECRET (SUPABASE_ prefix is reserved and cannot be set
+ * as a function secret). Edge Functions verify this token themselves via
+ * verifyDeviceToken and access the DB with the service_role key, so the secret
+ * only needs to be consistent between sign and verify.
  */
 export async function createDeviceToken(deviceId: string): Promise<string> {
   if (_mockToken !== undefined) return _mockToken;
-  const secret = Deno.env.get("SUPABASE_JWT_SECRET")!;
+  const secret = Deno.env.get("DEVICE_JWT_SECRET")!;
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -44,7 +46,7 @@ export async function verifyDeviceToken(
 ): Promise<string | null> {
   try {
     const { verify } = await import("https://deno.land/x/djwt@v3.0.2/mod.ts");
-    const secret = Deno.env.get("SUPABASE_JWT_SECRET")!;
+    const secret = Deno.env.get("DEVICE_JWT_SECRET")!;
     const key = await crypto.subtle.importKey(
       "raw",
       new TextEncoder().encode(secret),

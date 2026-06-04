@@ -96,7 +96,7 @@ supabase/
 
 ### 인증 방식
 
-- 커스텀 device JWT (HS256, SUPABASE_JWT_SECRET으로 서명, 365일 만료)
+- 커스텀 device JWT (HS256, DEVICE_JWT_SECRET으로 서명, 365일 만료) — `SUPABASE_` 접두사는 함수 secret으로 예약되어 쓸 수 없음
 - 헤더: `Authorization: Bearer <device_access_token>`
 - `getDeviceFromRequest(req)` → `DeviceInfo { id, role, display_name }` 반환
 - Edge Functions는 `service_role` key로 RLS 우회
