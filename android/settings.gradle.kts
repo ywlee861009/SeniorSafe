@@ -30,7 +30,6 @@ include(":core:activity")
 include(":core:ui")
 
 // Feature
-include(":feature:login")
 include(":feature:senior")
 include(":feature:guardian")
 include(":feature:mvp")

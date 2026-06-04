@@ -28,7 +28,6 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
 
     // Feature modules
-    implementation(project(":feature:login"))
     implementation(project(":feature:senior"))
     implementation(project(":feature:guardian"))
     implementation(project(":feature:mvp"))
