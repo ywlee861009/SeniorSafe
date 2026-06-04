@@ -23,10 +23,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.kero.anbu.core.model.PairingItem
 import com.kero.anbu.core.ui.theme.Neutral400
 import com.kero.anbu.core.ui.theme.Neutral600
+import com.kero.anbu.core.ui.theme.Neutral900
 import com.kero.anbu.core.ui.theme.Success500
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,10 +83,10 @@ fun GuardianHomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            items(uiState.pairings) { item ->
-                SeniorCard(item = item)
+            items(uiState.rows) { row ->
+                SeniorCard(row = row)
             }
-            if (uiState.pairings.isEmpty() && !uiState.isLoading) {
+            if (uiState.rows.isEmpty() && !uiState.isLoading) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(top = 64.dp), contentAlignment = Alignment.Center) {
                         Text("연결된 어르신이 없어요", color = Neutral600)
@@ -94,7 +98,8 @@ fun GuardianHomeScreen(
 }
 
 @Composable
-private fun SeniorCard(item: PairingItem) {
+private fun SeniorCard(row: SeniorRow) {
+    val item = row.pairing
     Card(
         modifier  = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(1.dp)
@@ -107,17 +112,7 @@ private fun SeniorCard(item: PairingItem) {
                 Text(item.seniorName, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .then(
-                                if (item.serviceActive)
-                                    Modifier.padding(0.dp)
-                                else
-                                    Modifier.padding(0.dp)
-                            )
-                    ) {
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape)) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             color    = if (item.serviceActive) Success500 else Neutral400,
@@ -131,14 +126,57 @@ private fun SeniorCard(item: PairingItem) {
                         color    = Neutral600
                     )
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text     = if (item.lastActivityAt != null) "마지막 사용 기록: ${item.lastActivityAt}" else "마지막 사용 기록: 없음",
-                    fontSize = 12.sp,
-                    color    = Neutral400
-                )
+                Spacer(Modifier.height(8.dp))
+                val activity = row.lastActivity
+                if (activity != null) {
+                    Text(
+                        text     = "마지막 활동",
+                        fontSize = 12.sp,
+                        color    = Neutral400
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text     = activity.source.toSourceLabel(),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color    = Neutral900
+                    )
+                    Text(
+                        text     = activity.occurredAt.toDisplayTime(),
+                        fontSize = 12.sp,
+                        color    = Neutral600
+                    )
+                } else {
+                    Text(
+                        text     = "마지막 활동: 기록 없음",
+                        fontSize = 12.sp,
+                        color    = Neutral400
+                    )
+                }
             }
             Text("›", fontSize = 22.sp, color = Neutral400)
         }
     }
 }
+
+private fun String.toSourceLabel(): String = when (this) {
+    "user_present" -> "휴대폰 잠금해제"
+    "power_connected" -> "충전기 연결"
+    "power_disconnected" -> "충전기 해제"
+    else -> this
+}
+
+private val displayTimeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("M월 d일 a h:mm", Locale.KOREA)
+
+/**
+ * ISO-8601 → "6월 4일 오후 9:34" (기기 로컬 시간).
+ * Android는 "...Z"로 업로드하지만 PostgREST는 "...+00:00"으로 돌려줄 수 있어
+ * 오프셋 표기(Z/+00:00) 양쪽을 받는 OffsetDateTime.parse를 쓴다.
+ */
+private fun String.toDisplayTime(): String =
+    runCatching {
+        OffsetDateTime.parse(this)
+            .atZoneSameInstant(ZoneId.systemDefault())
+            .format(displayTimeFormatter)
+    }.getOrDefault(this)
