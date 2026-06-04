@@ -32,5 +32,35 @@ enabled = false
 [functions.device-register]
 verify_jwt = false
 
+[functions.fcm-token]
+verify_jwt = false
+
+[functions.pairing-codes]
+verify_jwt = false
+
+[functions.pairing-claim]
+verify_jwt = false
+
+[functions.pairings-list]
+verify_jwt = false
+
+[functions.pairing-disconnect]
+verify_jwt = false
+
+[functions.activity-events]
+verify_jwt = false
+
+[functions.activity-events-list]
+verify_jwt = false
+
+[functions.service-events]
+verify_jwt = false
+
+[functions.service-events-list]
+verify_jwt = false
+
+[functions.inactivity-alerts-list]
+verify_jwt = false
+
 [functions.inactivity-check]
 verify_jwt = false
