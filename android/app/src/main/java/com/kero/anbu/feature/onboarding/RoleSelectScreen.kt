@@ -70,6 +70,7 @@ fun RoleSelectScreen(
         SeniorPrimaryButton(
             text = "어르신이에요",
             enabled = !uiState.isSaving,
+            isLoading = uiState.isSaving,
             onClick = {
                 viewModel.selectRole(DeviceRole.SENIOR, onSeniorSelected)
             }
@@ -77,6 +78,7 @@ fun RoleSelectScreen(
         Spacer(modifier = Modifier.height(16.dp))
         SeniorOutlinedButton(
             text = "보호자예요",
+            enabled = !uiState.isSaving,
             onClick = {
                 viewModel.selectRole(DeviceRole.GUARDIAN, onGuardianSelected)
             }
