@@ -27,6 +27,7 @@ import com.kero.anbu.core.model.InactivityAlertItem
 import com.kero.anbu.core.model.PairingItem
 import com.kero.anbu.core.ui.theme.Neutral400
 import com.kero.anbu.core.ui.theme.Neutral600
+import com.kero.anbu.core.ui.theme.Neutral900
 import com.kero.anbu.core.ui.theme.Success500
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,11 +82,10 @@ fun GuardianHomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            items(uiState.pairings) { item ->
+            items(uiState.rows) { row ->
                 SeniorCard(
-                    item = item,
-                    latestAlert = item.seniorDeviceId?.let { uiState.latestAlertsBySeniorId[it] },
-                    onClick = { onNavigateToAlerts(item) }
+                    row = row,
+                    onClick = { onNavigateToAlerts(row.pairing) }
                 )
             }
             if (uiState.isLoading) {
@@ -109,7 +109,7 @@ fun GuardianHomeScreen(
                     )
                 }
             }
-            if (uiState.pairings.isEmpty() && !uiState.isLoading) {
+            if (uiState.rows.isEmpty() && !uiState.isLoading) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(top = 64.dp), contentAlignment = Alignment.Center) {
                         Text("연결된 어르신이 없어요", color = Neutral600)
@@ -123,10 +123,11 @@ fun GuardianHomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SeniorCard(
-    item: PairingItem,
-    latestAlert: InactivityAlertItem?,
+    row: SeniorRow,
     onClick: () -> Unit
 ) {
+    val item = row.pairing
+    val latestAlert = row.latestAlert
     Card(
         modifier  = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(1.dp),
@@ -140,17 +141,7 @@ private fun SeniorCard(
                 Text(item.seniorName, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .then(
-                                if (item.serviceActive)
-                                    Modifier.padding(0.dp)
-                                else
-                                    Modifier.padding(0.dp)
-                            )
-                    ) {
+                    Box(modifier = Modifier.size(10.dp).clip(CircleShape)) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             color    = if (item.serviceActive) Success500 else Neutral400,
@@ -164,12 +155,33 @@ private fun SeniorCard(
                         color    = Neutral600
                     )
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text     = "마지막 사용 기록: ${item.lastActivityAt.toDisplayTimeOrNone()}",
-                    fontSize = 12.sp,
-                    color    = Neutral400
-                )
+                Spacer(Modifier.height(8.dp))
+                val activity = row.lastActivity
+                if (activity != null) {
+                    Text(
+                        text     = "마지막 활동",
+                        fontSize = 12.sp,
+                        color    = Neutral400
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text     = activity.source.toSourceLabel(),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color    = Neutral900
+                    )
+                    Text(
+                        text     = activity.occurredAt.toDisplayTime(),
+                        fontSize = 12.sp,
+                        color    = Neutral600
+                    )
+                } else {
+                    Text(
+                        text     = "마지막 활동: 기록 없음",
+                        fontSize = 12.sp,
+                        color    = Neutral400
+                    )
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = latestAlert?.toSummaryText()
@@ -189,3 +201,10 @@ private fun SeniorCard(
 
 private fun InactivityAlertItem.toSummaryText(): String =
     "최근 미사용 알림: ${sentAt.toDisplayTime()} · ${status.toKoreanAlertStatus()} · ${thresholdDays}일 기준"
+
+private fun String.toSourceLabel(): String = when (this) {
+    "user_present" -> "휴대폰 잠금해제"
+    "power_connected" -> "충전기 연결"
+    "power_disconnected" -> "충전기 해제"
+    else -> this
+}

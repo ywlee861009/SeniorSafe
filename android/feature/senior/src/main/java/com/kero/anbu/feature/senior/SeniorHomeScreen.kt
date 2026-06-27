@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +35,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeniorHomeScreen(
     onNavigateToPairingCode: () -> Unit,
@@ -41,6 +44,8 @@ fun SeniorHomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var backPressedTime by remember { mutableLongStateOf(0L) }
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showDebugSheet by remember { mutableStateOf(false) }
 
     BackHandler {
         val now = System.currentTimeMillis()
@@ -62,44 +67,59 @@ fun SeniorHomeScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        item {
-            QuoteCard(message = uiState.message)
-        }
-        item {
-            DebugSectionHeader()
-        }
-        item {
-            ServiceStatusRow(
-                isRunning = uiState.isServiceRunning,
-                onToggle = {
-                    if (uiState.isServiceRunning) viewModel.stopMonitoring()
-                    else viewModel.startMonitoring()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("안부") },
+                navigationIcon = {
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Default.Menu, contentDescription = "메뉴")
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("개발자 정보") },
+                                onClick = {
+                                    menuExpanded = false
+                                    showDebugSheet = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("다시 페어링") },
+                                onClick = {
+                                    menuExpanded = false
+                                    viewModel.resetPairingForDebug(onNavigateToPairingCode)
+                                }
+                            )
+                        }
+                    }
                 }
             )
         }
-        if (uiState.recentEvents.isEmpty()) {
-            item {
-                Text(
-                    text = "아직 기록이 없어요",
-                    fontSize = 16.sp,
-                    color = Neutral400
-                )
-            }
-        } else {
-            items(uiState.recentEvents) { event ->
-                EventRow(event)
-            }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            QuoteCard(message = uiState.message)
         }
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            SeniorOutlinedButton(
-                text = "연결 전으로 돌아가기",
-                onClick = { viewModel.resetPairingForDebug(onNavigateToPairingCode) }
+    }
+
+    if (showDebugSheet) {
+        ModalBottomSheet(onDismissRequest = { showDebugSheet = false }) {
+            DebugSheetContent(
+                isServiceRunning = uiState.isServiceRunning,
+                recentEvents = uiState.recentEvents,
+                onToggleService = {
+                    if (uiState.isServiceRunning) viewModel.stopMonitoring()
+                    else viewModel.startMonitoring()
+                }
             )
         }
     }
@@ -130,6 +150,44 @@ private fun QuoteCard(message: String) {
                 textAlign = TextAlign.Center,
                 lineHeight = 40.sp
             )
+        }
+    }
+}
+
+@Composable
+private fun DebugSheetContent(
+    isServiceRunning: Boolean,
+    recentEvents: List<UnlockEventEntity>,
+    onToggleService: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            DebugSectionHeader()
+        }
+        item {
+            ServiceStatusRow(
+                isRunning = isServiceRunning,
+                onToggle = onToggleService
+            )
+        }
+        if (recentEvents.isEmpty()) {
+            item {
+                Text(
+                    text = "아직 기록이 없어요",
+                    fontSize = 16.sp,
+                    color = Neutral400
+                )
+            }
+        } else {
+            items(recentEvents) { event ->
+                EventRow(event)
+            }
         }
     }
 }

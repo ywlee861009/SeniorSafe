@@ -24,6 +24,10 @@ class PairingRepository @Inject constructor(
             limit = limit
         ).alerts
 
+    /** 해당 어르신의 가장 최근 활동 이벤트 1건 (없으면 null). */
+    suspend fun getLatestActivity(seniorDeviceId: String): ActivityEventItem? =
+        api.getActivityEvents(seniorDeviceId, limit = 1).events.firstOrNull()
+
     suspend fun disconnectPairing(pairingId: String): DisconnectPairingResponse =
         api.disconnectPairing(DisconnectPairingRequest(pairingId))
 }

@@ -2,15 +2,6 @@ package com.kero.anbu.core.model
 
 import com.google.gson.annotations.SerializedName
 
-// ─── Legacy Login Compatibility ──────────────────────────────────────────────
-
-data class AuthResponse(
-    @SerializedName("access_token") val accessToken: String,
-    @SerializedName("user_type") val userType: String,
-    val name: String,
-    @SerializedName("user_id") val userId: String
-)
-
 // ─── Backend Device MVP ──────────────────────────────────────────────────────
 
 data class HealthResponse(val status: String)

@@ -3,6 +3,9 @@
 build/
 **/build/
 
+# Kotlin compiler cache
+.kotlin/
+
 # Local configuration
 local.properties
 

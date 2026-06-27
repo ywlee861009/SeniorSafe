@@ -7,7 +7,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -23,7 +22,7 @@ object NetworkModule {
     fun provideOkHttpClient(tokenDataStore: TokenDataStore): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor { chain ->
-                val token = runBlocking { tokenDataStore.getDeviceAccessToken() }
+                val token = tokenDataStore.peekDeviceAccessToken()
                 val request = if (token.isNullOrBlank()) {
                     chain.request()
                 } else {
@@ -35,7 +34,12 @@ object NetworkModule {
             }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+                    // 릴리즈 빌드에서는 Bearer 토큰·페어링 코드 등이 logcat에 남지 않도록 끈다.
+                    level = if (BuildConfig.DEBUG) {
+                        HttpLoggingInterceptor.Level.BODY
+                    } else {
+                        HttpLoggingInterceptor.Level.NONE
+                    }
                 }
             )
             .connectTimeout(30, TimeUnit.SECONDS)

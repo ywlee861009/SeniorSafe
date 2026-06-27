@@ -3,6 +3,7 @@ package com.kero.anbu.feature.guardian
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kero.anbu.core.data.repository.PairingRepository
+import com.kero.anbu.core.model.ActivityEventItem
 import com.kero.anbu.core.model.InactivityAlertItem
 import com.kero.anbu.core.model.PairingItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,9 +15,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** 보호자 홈에 표시할 어르신 1명 — 페어링 정보 + 가장 최근 활동 + 가장 최근 미사용 알림. */
+data class SeniorRow(
+    val pairing: PairingItem,
+    val lastActivity: ActivityEventItem? = null,
+    val latestAlert: InactivityAlertItem? = null
+)
+
 data class GuardianHomeUiState(
-    val pairings: List<PairingItem> = emptyList(),
-    val latestAlertsBySeniorId: Map<String, InactivityAlertItem> = emptyMap(),
+    val rows: List<SeniorRow> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -35,36 +42,37 @@ class GuardianHomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = GuardianHomeUiState(isLoading = true)
             try {
-                val list = pairingRepository.getPairingList()
-                val alerts = loadLatestAlerts(list)
-                _uiState.value = GuardianHomeUiState(
-                    pairings = list,
-                    latestAlertsBySeniorId = alerts
-                )
+                val pairings = pairingRepository.getPairingList()
+                val rows = loadRows(pairings)
+                _uiState.value = GuardianHomeUiState(rows = rows)
             } catch (e: Exception) {
                 _uiState.value = GuardianHomeUiState(error = e.message)
             }
         }
     }
 
-    private suspend fun loadLatestAlerts(
+    /** 각 어르신의 최근 활동·최근 미사용 알림을 병렬 로드한다. 개별 실패는 null로 흡수. */
+    private suspend fun loadRows(
         pairings: List<PairingItem>
-    ): Map<String, InactivityAlertItem> = coroutineScope {
-        pairings
-            .mapNotNull { it.seniorDeviceId }
-            .distinct()
-            .map { seniorDeviceId ->
-                async {
-                    runCatching {
-                        pairingRepository.getInactivityAlerts(
-                            seniorDeviceId = seniorDeviceId,
-                            limit = 1
-                        ).firstOrNull()
-                    }.getOrNull()?.let { seniorDeviceId to it }
+    ): List<SeniorRow> = coroutineScope {
+        pairings.map { pairing ->
+            async {
+                val seniorId = pairing.seniorDeviceId
+                val lastActivity = seniorId?.let { id ->
+                    runCatching { pairingRepository.getLatestActivity(id) }.getOrNull()
                 }
+                val latestAlert = seniorId?.let { id ->
+                    runCatching {
+                        pairingRepository.getInactivityAlerts(seniorDeviceId = id, limit = 1)
+                            .firstOrNull()
+                    }.getOrNull()
+                }
+                SeniorRow(
+                    pairing = pairing,
+                    lastActivity = lastActivity,
+                    latestAlert = latestAlert
+                )
             }
-            .awaitAll()
-            .filterNotNull()
-            .toMap()
+        }.awaitAll()
     }
 }

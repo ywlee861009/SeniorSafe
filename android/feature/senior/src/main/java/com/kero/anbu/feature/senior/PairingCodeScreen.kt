@@ -83,11 +83,17 @@ fun PairingCodeScreen(
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(40.dp))
-        SeniorOutlinedButton(text = "새 코드 받기", onClick = { viewModel.loadCode() })
+        SeniorOutlinedButton(
+            text = "새 코드 받기",
+            enabled = !uiState.isSaving,
+            isLoading = uiState.isLoading,
+            onClick = { viewModel.loadCode() }
+        )
         Spacer(Modifier.height(16.dp))
         SeniorPrimaryButton(
             text = "연결 확인하기",
             enabled = !uiState.isSaving && !uiState.isLoading,
+            isLoading = uiState.isSaving,
             onClick = { viewModel.markPaired(onPairingComplete) }
         )
         uiState.error?.let {
