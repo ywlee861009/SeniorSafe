@@ -15,7 +15,7 @@ P0
 - ✅ 기존 device-token OkHttp interceptor / `TokenDataStore` 저장 경계는 그대로 재사용 (이미 구현되어 있었음)
 - ⚠️ `getCurrentDevice`는 PostgREST가 배열을 반환하는데 Android 모델은 단건이다. 현재 UI 호출자는 없지만 서버 동기화 기능을 붙일 때 정정 필요.
 - ⬜ (잔여) 실제 백엔드 기준 페어링 성공/실패·만료·재사용 상태 표시, 앱 재실행 시 홈 진입 검증
-- ⬜ (잔여) login/register/MVP 대시보드 dead route 정리 (`ticket/todo/008`과 연계)
+- ✅ login/register dead route 정리 완료 — `feature:login` 모듈·`AuthRepository` 삭제 (MVP 대시보드 정리는 `ticket/todo/008`과 연계해 잔존)
 - ✅ `android/app/google-services.json` 로컬 배치 후 `assembleDebug` 통과 (`ticket/todo/005`)
 - ⬜ (잔여) 실기기 온보딩/페어링 검증
 

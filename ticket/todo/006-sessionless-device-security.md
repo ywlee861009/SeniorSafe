@@ -28,7 +28,7 @@ P1
 - ✅ OkHttp 인증 interceptor가 저장된 device token을 Bearer header로 첨부
 - ✅ 앱 삭제/앱 데이터 삭제 시 `DeviceDataStore`의 local install id가 사라져 새 기기로 취급하는 정책 구현
 - ⚠️ `TokenDataStore`가 user JWT 호환 필드(`user_type`, `user_name`, `user_id`)를 함께 보관하므로 device auth 전용 모델로 정리 필요
-- ⚠️ Android 보안 저장소(EncryptedSharedPreferences 등) 사용 여부 미결정
+- ✅ device token을 AndroidKeyStore 기반 AES/GCM(`TokenCipher`)으로 암호화해 저장(`KEY_TOKEN_ENC`), 복호화 실패 시 재인증 유도
 - 보안 정책 문서화
 
 ## 완료 조건

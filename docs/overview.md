@@ -143,7 +143,7 @@ Firebase FCM
 
 **기타:**
 - 현재 저장소에는 `core:fall-detection` 모듈이 존재하지 않는다. 낙상 감지 완료 티켓은 과거 기록으로만 남아 있으며 일반 MVP 앱 흐름에는 낙상 기능 진입점이 없다. 정리 대상: `ticket/todo/008`
-- login/register 화면 코드 잔존(dead route — `AppNavHost`에 등록되나 `MainActivity.toStartDestination`이 분기하지 않음)
+- (해소) login/register 화면 및 `feature:login` 모듈·`AuthRepository` 제거 완료 — dead route 정리됨
 - `core:network`의 fallback 기본값은 아직 `http://10.0.2.2:8000/`이지만, 저장소의 `android/gradle.properties`가 Supabase Functions URL을 제공한다. 머신별 override 또는 product flavor 정책은 추가 정리 대상이다.
 
 ### 어르신 앱
@@ -336,7 +336,9 @@ InactivityAlert
 SUPABASE_URL=https://<project-id>.supabase.co
 SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-SUPABASE_JWT_SECRET=<jwt-secret>
+
+# Device JWT (SUPABASE_ 접두사는 함수 secret 예약어라 사용 불가)
+DEVICE_JWT_SECRET=<device-jwt-secret>
 
 # Firebase
 FIREBASE_SERVICE_ACCOUNT=<firebase-service-account-json>

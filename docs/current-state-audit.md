@@ -69,7 +69,7 @@ Android는 사용자 흐름과 로컬 활동 기록이 상당 부분 구현되�
 - ✅ (해소) WorkManager 기반 네트워크 연결 시 pending activity/service event 백그라운드 재시도 추가
 - ✅ (해소) 보호자 홈에서 최근 알림과 전체 미사용 알림 이력 화면 제공
 - (잔여) 보호자 연결 해제 버튼/플로우 없음
-- (잔여) login/register 화면은 route에 남아 있지만 일반 시작 분기에서는 접근되지 않음
+- ✅ (해소) login/register 화면 및 `feature:login` 모듈·`AuthRepository` 제거 완료
 - (잔여) `getCurrentDevice`는 PostgREST 응답(배열)과 모델이 불일치하나 UI 호출자 없음
 
 ## Tickets

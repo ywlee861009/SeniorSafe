@@ -81,7 +81,8 @@ supabase/
 ├── migrations/                    # PostgreSQL 마이그레이션
 │   ├── 20260527000001_initial_schema.sql
 │   ├── 20260527000002_cron_inactivity_check.sql
-│   └── 20260530000001_add_service_events.sql
+│   ├── 20260530000001_add_service_events.sql
+│   └── 20260601000001_grant_table_privileges.sql
 └── functions/
     ├── _shared/                   # 공유 유틸 (cors, auth, jwt, supabase client)
     ├── <function-name>/index.ts   # 각 Edge Function
@@ -103,7 +104,7 @@ supabase/
 - RLS가 DB 레이어에서 보안 강제 (5개 테이블 적용)
 - 사용자 계정/Supabase Auth 로그인은 MVP 범위가 아니다
 
-> **Android 구현 현황** (2026-06-01): device_access_token 발급/저장/주입 경계 구현됨. `device-register` 응답 토큰을 `TokenDataStore.saveDeviceAuth()`로 저장하고, `NetworkModule`의 OkHttp Interceptor가 `getDeviceAccessToken()`을 `Authorization: Bearer`로 주입한다. `NetworkModule`은 실제 Retrofit을 `ApiService`로 제공하며(`FakeApiService` 삭제), `ApiService` 경로는 실제 Edge Function 이름과 일치한다. 잔여: `google-services.json` 배치, 실 프로젝트 base URL, 어르신 활동 업로드 배치 계약(`ticket/todo/004`), 실기기 E2E(`ticket/todo/005`).
+> **Android 구현 현황** (2026-06-28): device_access_token 발급/저장/주입 경계 구현됨. `device-register` 응답 토큰을 `TokenDataStore.saveDeviceAuth()`로 저장하고(저장 시 `TokenCipher`로 AES/GCM 암호화), `NetworkModule`의 OkHttp Interceptor가 `getDeviceAccessToken()`을 `Authorization: Bearer`로 주입한다. JWT 서명 secret은 `DEVICE_JWT_SECRET`(`SUPABASE_` 접두사는 예약어라 사용 불가). `NetworkModule`은 실제 Retrofit을 `ApiService`로 제공하며(`FakeApiService` 삭제), `ApiService` 경로는 실제 Edge Function 이름과 일치한다. 어르신 활동/서비스 이벤트 배치 업로드도 연결 완료(`ActivityMonitorService` + `ActivityUploadWorker`). 잔여: 실기기 E2E(`ticket/todo/005` Firebase 런타임 설정).
 
 ### Edge Function 구현 상태
 
@@ -128,7 +129,7 @@ supabase/
 
 ## 데이터 모델 요약 (Supabase PostgreSQL)
 
-6개 테이블, 전부 RLS 적용. 마이그레이션 3개로 관리.
+6개 테이블, 전부 RLS 적용. 마이그레이션 4개로 관리.
 
 ```text
 devices              ← 기기 등록/인증
@@ -174,15 +175,16 @@ android/
 │   ├── datastore/
 │   ├── data/
 │   ├── diagnostics/
+│   ├── util/
+│   ├── activity/   ← 활동 모니터링 서비스 + Room 기록 + 배치 업로드
 │   └── ui/
 └── feature/
-    ├── login/      ← 코드 잔존(dead route). AppNavHost에 등록되어 있으나 MainActivity.toStartDestination이 분기하지 않음
     ├── senior/
     ├── guardian/
     └── mvp/
 ```
 
-낙상 감지 런타임은 `core:fall-detection`에 있으나 제품화는 보류한다 — `core:fall-detection`은 dependency graph orphan으로 APK에 미포함. `feature/senior/.service/FallDetectionService`에도 동일 이름의 별도 서비스가 있으나 호출 트리거 없음(둘 다 dead). 정리 대상은 `ticket/todo/008` 참고. 서비스 생존/heartbeat/Room 로그 패턴은 활동 모니터링 서비스에서 재사용했다.
+낙상 감지 제품화는 보류 상태이며, 관련 런타임 코드(`core:fall-detection` 모듈, `FallDetectionService`)는 이미 제거되어 트리에 존재하지 않는다 — 남은 것은 티켓 문서(`ticket/done/007`, `ticket/todo/008`)뿐이다. 서비스 생존/heartbeat/Room 로그 패턴은 `core:activity`의 활동 모니터링 서비스에서 재사용했다.
 
 ### 의존성 방향
 
@@ -198,8 +200,8 @@ core/* → core/* (순환 금지)
 ACTION_USER_PRESENT / POWER_CONNECTED / POWER_DISCONNECTED
   → ActivityRepository.recordUnlock(now, source)
   → Room unlock_events 테이블 insert (uploaded=false)
-  → [미구현] 백엔드 POST activity-events(배치 {events:[...]}) 업로드 및 재전송
-  (Room DAO에 getPendingUpload/markUploaded 정의 있으나 호출자 없음. ApiService.recordActivityEvent는 경로만 정렬, 배치 DTO 정렬은 ticket/todo/004)
+  → 백엔드 POST activity-events(배치 {events:[...]}) 업로드 + 실패 시 재전송
+  (ActivityMonitorService가 unlock/power/heartbeat 시 uploadPendingEvents() 호출, ActivityUploadWorker(WorkManager)가 재전송 담당)
 ```
 
 서비스 실행 내역:
@@ -207,7 +209,7 @@ ACTION_USER_PRESENT / POWER_CONNECTED / POWER_DISCONNECTED
 ```text
 ActivityMonitorService
   → started / stopped / heartbeat / error 로컬 기록 (Room service_events + DiagnosticsLogStore)
-  → [미구현] 백엔드 POST service-events(배치 {events:[...]}) 업로드
+  → 백엔드 POST service-events(배치 {events:[...]}) 업로드
 ```
 
 ### 네이밍

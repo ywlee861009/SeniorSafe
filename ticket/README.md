@@ -63,7 +63,7 @@ SeniorSafe는 로그인/회원가입 중심 MVP에서 로그인 없는 기기 �
 
 ## Android 남은 핵심 작업
 
-- `todo/003`: Android 온보딩/페어링 실서버 흐름의 실기기 검증, 실패/만료/재사용 UX, login/register/MVP dead route 정리. Fake API 제거와 Retrofit 전환은 완료.
+- `todo/003`: Android 온보딩/페어링 실서버 흐름의 실기기 검증, 실패/만료/재사용 UX. Fake API 제거·Retrofit 전환·login/register dead route 정리는 완료.
 - `todo/005`: Firebase 런타임 설정, API base URL 환경 분리, FCM token 등록/갱신/권한 처리.
 - `todo/006`: 로그인 없는 기기 단위 인증, rate limit, pairing/device 권한 정책 구현.
 - `todo/007`: 보호자 화면을 device/pairing 기준 모니터링 화면으로 보강하고, 피벗 전 `service_active`/`last_fall_at` UI 모델을 정리.

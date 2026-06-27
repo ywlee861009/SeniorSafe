@@ -7,7 +7,7 @@
 ### 프로젝트 설정
 
 1. [supabase.com](https://supabase.com)에서 프로젝트 생성
-2. 환경 변수 확인: Dashboard → Settings → API에서 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` 확인
+2. 환경 변수 확인: Dashboard → Settings → API에서 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` 확인. device 토큰 서명용 `DEVICE_JWT_SECRET`은 대시보드 값이 아니라 직접 생성한 임의의 비밀값을 쓴다(`SUPABASE_` 접두사는 함수 secret 예약어라 사용 불가).
 
 ### 마이그레이션 적용
 
@@ -38,7 +38,7 @@ supabase functions deploy activity-events
 ```bash
 supabase secrets set SUPABASE_URL=https://<project-id>.supabase.co
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-supabase secrets set SUPABASE_JWT_SECRET=<jwt-secret>
+supabase secrets set DEVICE_JWT_SECRET=<device-jwt-secret>
 supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat service-account.json)"
 # Legacy FCM fallback only. Prefer FIREBASE_SERVICE_ACCOUNT for real delivery.
 supabase secrets set FIREBASE_SERVER_KEY=<legacy-firebase-server-key>

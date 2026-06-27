@@ -12,7 +12,7 @@ MVP는 사용자 로그인 없이 동작한다. 보호가 필요한 엔드포인
 Authorization: Bearer <device_access_token>
 ```
 
-> **구현 상태 표기**: ✅ 구현됨 / ⚠️ Android 미연결 — 백엔드 Edge Function은 구현 완료, Android 클라이언트 연동은 미구현.
+> **구현 상태 표기**: ✅ 구현됨 — 백엔드 Edge Function 및 Android 클라이언트 연동 모두 완료. JWT 서명 secret은 `DEVICE_JWT_SECRET`을 사용한다(`SUPABASE_` 접두사는 함수 secret 예약어).
 
 ## Devices ✅ 구현됨
 
